@@ -157,7 +157,7 @@ export default function SkillMapPage() {
       <CareerGoalModal
         isOpen={isGoalModalOpen}
         onClose={() => setIsGoalModalOpen(false)}
-        currentGoal={student?.careerGoal || 'Machine Learning Engineer'}
+        currentGoal={student?.careerGoal || ''}
         onUpdateGoal={handleUpdateGoal}
       />
 

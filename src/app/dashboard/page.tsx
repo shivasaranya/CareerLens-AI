@@ -46,7 +46,8 @@ import {
   AlertTriangle,
   ChevronRight,
   ShieldCheck,
-  Check
+  Check,
+  FolderGit2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -287,16 +288,18 @@ export default function DashboardPage() {
                 <div className="absolute right-0 top-0 bottom-0 w-80 bg-gradient-to-l from-white/10 to-transparent pointer-events-none" />
                 <div className="space-y-1 z-10">
                   <div className="flex items-center space-x-2">
-                    <Target className="w-4 h-4 text-cyan-300" />
+                    <Target className={`w-4 h-4 ${student?.careerGoal ? 'text-cyan-300' : 'text-amber-300'}`} />
                     <span className="text-xs uppercase tracking-wider font-bold text-indigo-200">
-                      Active Career Trajectory
+                      {student?.careerGoal ? 'Active Career Trajectory' : 'Career Goal'}
                     </span>
                   </div>
                   <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                    {student!.careerGoal || 'Machine Learning Engineer'}
+                    {student?.careerGoal || 'Not set yet'}
                   </h2>
                   <p className="text-xs text-indigo-200 max-w-xl">
-                    All match scores, skill gap priorities, and job rankings are dynamically calibrated to this career destination.
+                    {student?.careerGoal
+                      ? 'All match scores, skill gap priorities, and job rankings are dynamically calibrated to this career destination.'
+                      : 'Set your career goal to unlock personalized opportunity recommendations, dynamic match scores, and skill roadmaps.'}
                   </p>
                 </div>
 
@@ -308,10 +311,23 @@ export default function DashboardPage() {
 
                   <button
                     onClick={() => setIsGoalModalOpen(true)}
-                    className="px-5 py-3 rounded-2xl bg-white hover:bg-slate-100 text-indigo-900 font-black text-xs shadow-lg transition-all flex items-center space-x-2 cursor-pointer"
+                    className={`px-5 py-3 rounded-2xl font-black text-xs shadow-lg transition-all flex items-center space-x-2 cursor-pointer ${
+                      student?.careerGoal
+                        ? 'bg-white hover:bg-slate-100 text-indigo-900'
+                        : 'bg-amber-400 hover:bg-amber-300 text-slate-950'
+                    }`}
                   >
-                    <Edit3 className="w-4 h-4 text-indigo-600" />
-                    <span>Change Goal</span>
+                    {student?.careerGoal ? (
+                      <>
+                        <Edit3 className="w-4 h-4 text-indigo-600" />
+                        <span>Change Goal</span>
+                      </>
+                    ) : (
+                      <>
+                        <Target className="w-4 h-4 text-slate-950" />
+                        <span>Set My Career Goal</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -319,39 +335,260 @@ export default function DashboardPage() {
               {/* 5 Dynamic Overview Metric Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5 pt-2">
                 <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Strong Matches</span>
-                  <span className="font-mono text-2xl font-black text-emerald-600 mt-1 block">{dashboardStats?.strongMatches}</span>
-                  <span className="text-[10px] text-slate-500 font-medium">≥80% alignment</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    {student?.careerGoal ? 'Strong Matches' : 'Verified Skills'}
+                  </span>
+                  <span className="font-mono text-2xl font-black text-emerald-600 mt-1 block">
+                    {student?.careerGoal ? dashboardStats?.strongMatches : (student?.skills.length || 0)}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    {student?.careerGoal ? '≥80% alignment' : 'Foundational skills'}
+                  </span>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Near Matches</span>
-                  <span className="font-mono text-2xl font-black text-indigo-600 mt-1 block">{dashboardStats?.nearMatches}</span>
-                  <span className="text-[10px] text-slate-500 font-medium">60% – 79% alignment</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    {student?.careerGoal ? 'Near Matches' : 'Academic Projects'}
+                  </span>
+                  <span className="font-mono text-2xl font-black text-indigo-600 mt-1 block">
+                    {student?.careerGoal ? dashboardStats?.nearMatches : (student?.projects.length || 0)}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    {student?.careerGoal ? '60% – 79% alignment' : 'Coursework & practice'}
+                  </span>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Priority Skill Gaps</span>
-                  <span className="font-mono text-2xl font-black text-rose-600 mt-1 block">{dashboardStats?.priorityGapsCount}</span>
-                  <span className="text-[10px] text-slate-500 font-medium">Critical for target goal</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    {student?.careerGoal ? 'Priority Skill Gaps' : 'Work Experience'}
+                  </span>
+                  <span className="font-mono text-2xl font-black text-rose-600 mt-1 block">
+                    {student?.careerGoal ? dashboardStats?.priorityGapsCount : (student?.experience.length || 0)}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    {student?.careerGoal ? 'Critical for target goal' : 'No fake entries'}
+                  </span>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Verified Skills</span>
-                  <span className="font-mono text-2xl font-black text-[#172033] mt-1 block">{dashboardStats?.skillsCount}</span>
-                  <span className="text-[10px] text-slate-500 font-medium">Backed by evidence</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    {student?.careerGoal ? 'Total Profile Skills' : 'Certifications'}
+                  </span>
+                  <span className="font-mono text-2xl font-black text-[#172033] mt-1 block">
+                    {student?.careerGoal ? dashboardStats?.skillsCount : (student?.certifications.length || 0)}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    {student?.careerGoal ? 'Backed by evidence' : 'None added yet'}
+                  </span>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs col-span-2 sm:col-span-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Urgent Deadlines</span>
-                  <span className="font-mono text-2xl font-black text-amber-600 mt-1 block">{dashboardStats?.upcomingDeadlines}</span>
-                  <span className="text-[10px] text-slate-500 font-medium">≤ 14 days remaining</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    {student?.careerGoal ? 'Urgent Deadlines' : 'Career Destination'}
+                  </span>
+                  <span className="font-mono text-2xl font-black text-amber-600 mt-1 block">
+                    {student?.careerGoal ? dashboardStats?.upcomingDeadlines : 'Unset'}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    {student?.careerGoal ? '≤ 14 days remaining' : 'Ready to configure'}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* 2. Top Recommended Jobs Section */}
-            <div className="space-y-4">
+            {/* Profile Status & Readiness Checklist (Section 7) */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-black text-[#172033] tracking-tight flex items-center space-x-2">
+                    <CheckCircle2 className="w-5 h-5 text-indigo-600" />
+                    <span>Profile Status & Readiness Indicator</span>
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Transparent overview based strictly on verified inputs.
+                  </p>
+                </div>
+                <div className="px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 font-mono text-xs font-bold">
+                  {profileCompletion}% Complete
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                <div className="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-200">
+                  <div className="flex items-center space-x-2 text-emerald-800 font-bold">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <span>Profile created</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-700 mt-1 font-medium">✓ Basic information</p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-200">
+                  <div className="flex items-center space-x-2 text-emerald-800 font-bold">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <span>Skills</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-700 mt-1 font-medium">
+                    ✓ Initial skills added ({student!.skills.length} foundational skills)
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-200">
+                  <div className="flex items-center space-x-2 text-emerald-800 font-bold">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <span>Projects</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-700 mt-1 font-medium">
+                    ✓ Academic projects added ({student!.projects.length} starter projects)
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="flex items-center space-x-2 text-slate-600 font-bold">
+                    <span className="w-4 h-4 rounded-full border-2 border-slate-400 inline-block flex-shrink-0" />
+                    <span>Experience</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1">○ No professional experience yet</p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="flex items-center space-x-2 text-slate-600 font-bold">
+                    <span className="w-4 h-4 rounded-full border-2 border-slate-400 inline-block flex-shrink-0" />
+                    <span>Certifications</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-1">○ None added</p>
+                </div>
+
+                <div className={`p-3.5 rounded-2xl border ${student?.careerGoal ? 'bg-emerald-50/60 border-emerald-200' : 'bg-amber-50/60 border-amber-200'}`}>
+                  <div className={`flex items-center space-x-2 font-bold ${student?.careerGoal ? 'text-emerald-800' : 'text-amber-800'}`}>
+                    {student?.careerGoal ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    ) : (
+                      <span className="w-4 h-4 rounded-full border-2 border-amber-500 inline-block flex-shrink-0" />
+                    )}
+                    <span>Career Goal</span>
+                  </div>
+                  <p className={`text-[11px] mt-1 font-medium ${student?.careerGoal ? 'text-emerald-700' : 'text-amber-700'}`}>
+                    {student?.careerGoal ? `✓ ${student.careerGoal}` : '○ Not set'}
+                  </p>
+                </div>
+
+                <div className={`p-3.5 rounded-2xl border ${student?.careerInterests && student.careerInterests.length > 0 ? 'bg-emerald-50/60 border-emerald-200' : 'bg-slate-50 border-slate-200'}`}>
+                  <div className={`flex items-center space-x-2 font-bold ${student?.careerInterests && student.careerInterests.length > 0 ? 'text-emerald-800' : 'text-slate-600'}`}>
+                    {student?.careerInterests && student.careerInterests.length > 0 ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    ) : (
+                      <span className="w-4 h-4 rounded-full border-2 border-slate-400 inline-block flex-shrink-0" />
+                    )}
+                    <span>Interests</span>
+                  </div>
+                  <p className={`text-[11px] mt-1 ${student?.careerInterests && student.careerInterests.length > 0 ? 'text-emerald-700 font-medium' : 'text-slate-500'}`}>
+                    {student?.careerInterests && student.careerInterests.length > 0 ? `✓ ${student.careerInterests.join(', ')}` : '○ Not set'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 8: AI RECOMMENDATION BEHAVIOR */}
+            {!student?.careerGoal ? (
+              <div className="space-y-6">
+                <div className="bg-gradient-to-br from-indigo-900 via-indigo-950 to-purple-950 rounded-3xl p-8 sm:p-10 text-white shadow-xl border border-indigo-500/20 relative overflow-hidden text-center space-y-6">
+                  <div className="w-16 h-16 rounded-3xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center mx-auto text-cyan-300 shadow-inner">
+                    <Target className="w-8 h-8" />
+                  </div>
+                  <div className="max-w-2xl mx-auto space-y-2">
+                    <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                      Set your career goal to unlock personalized opportunity recommendations.
+                    </h2>
+                    <p className="text-sm text-indigo-200 leading-relaxed">
+                      CareerLens AI does not assume or pretend to know your preferred career. Once you select or enter your career goal, the platform dynamically analyzes your skills, projects, and coursework to calculate real match scores, priority skill gaps, and learning roadmaps.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-1 max-w-2xl mx-auto">
+                    {[
+                      'Software Engineer',
+                      'Web Development',
+                      'Frontend Developer',
+                      'Backend Engineer',
+                      'Data Scientist',
+                      'AI/ML Engineer',
+                      'Cloud Engineer',
+                      'Cybersecurity Engineer',
+                    ].map((role) => (
+                      <button
+                        key={role}
+                        onClick={() => handleUpdateGoal(role)}
+                        className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 text-xs font-semibold transition-all cursor-pointer"
+                      >
+                        + {role}
+                      </button>
+                    ))}
+                  </div>
+                  <div>
+                    <button
+                      onClick={() => setIsGoalModalOpen(true)}
+                      className="px-6 py-3.5 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-sm shadow-xl transition-all inline-flex items-center space-x-2 cursor-pointer"
+                    >
+                      <Target className="w-4 h-4 text-slate-950" />
+                      <span>Set My Career Goal</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Initial Starter Skills & Projects Preview */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2 text-indigo-700 font-bold text-xs uppercase tracking-wider">
+                        <Sparkles className="w-4 h-4 text-indigo-600" />
+                        <span>Foundational Starter Skills ({student!.skills.length})</span>
+                      </div>
+                      <button
+                        onClick={() => router.push('/profile')}
+                        className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer"
+                      >
+                        Manage in Profile
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {student!.skills.map((s) => (
+                        <div key={s.name} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+                          <span className="font-bold text-slate-800">{s.name}</span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white text-slate-600 border border-slate-200">
+                            {s.level}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2 text-indigo-700 font-bold text-xs uppercase tracking-wider">
+                        <FolderGit2 className="w-4 h-4 text-indigo-600" />
+                        <span>Academic / Personal Projects ({student!.projects.length})</span>
+                      </div>
+                      <button
+                        onClick={() => router.push('/profile')}
+                        className="text-xs font-bold text-indigo-600 hover:underline cursor-pointer"
+                      >
+                        Manage in Profile
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {student!.projects.map((p) => (
+                        <div key={p.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                          <div className="font-bold text-slate-900">{p.title}</div>
+                          <p className="text-[11px] text-slate-500 line-clamp-1">{p.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* 2. Top Recommended Jobs Section */}
+                <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-black text-[#172033] tracking-tight flex items-center space-x-2">
@@ -582,23 +819,25 @@ export default function DashboardPage() {
               onExploreGaps={() => router.push('/skill-map')}
               onSimulateWhatIf={() => router.push('/what-if')}
             />
-          </div>
-        ) : (
-          <EmptyDashboard
-            onBuildProfile={() => setIsOnboardingOpen(true)}
-            onSignIn={() => setIsAuthModalOpen(true)}
-            userName={currentUser?.name}
-          />
+          </>
         )}
-      </main>
-
-      {/* Career Goal Modal */}
-      <CareerGoalModal
-        isOpen={isGoalModalOpen}
-        onClose={() => setIsGoalModalOpen(false)}
-        currentGoal={student?.careerGoal || 'Machine Learning Engineer'}
-        onUpdateGoal={handleUpdateGoal}
+      </div>
+    ) : (
+      <EmptyDashboard
+        onBuildProfile={() => setIsOnboardingOpen(true)}
+        onSignIn={() => setIsAuthModalOpen(true)}
+        userName={currentUser?.name}
       />
+    )}
+  </main>
+
+  {/* Career Goal Modal */}
+  <CareerGoalModal
+    isOpen={isGoalModalOpen}
+    onClose={() => setIsGoalModalOpen(false)}
+    currentGoal={student?.careerGoal || ''}
+    onUpdateGoal={handleUpdateGoal}
+  />
 
       {/* Modals */}
       {selectedOppForDetail && (

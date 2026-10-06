@@ -38,7 +38,7 @@ export const SkillMapVisual: React.FC<SkillMapVisualProps> = ({
   const [activeFilter, setActiveFilter] = useState<'all' | 'strong' | 'developing' | 'gaps'>('all');
 
   const hasProfile = Boolean(student && student.name && student.name.trim().length > 0);
-  const currentGoal = student?.careerGoal || 'Machine Learning Engineer';
+  const currentGoal = student?.careerGoal || 'Not set yet';
 
   const skillGaps = student ? analyzeSkillGaps(student, opportunities) : [];
 
@@ -86,7 +86,7 @@ export const SkillMapVisual: React.FC<SkillMapVisualProps> = ({
               className="px-3.5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all flex items-center space-x-1.5 cursor-pointer"
             >
               <Edit3 className="w-3.5 h-3.5" />
-              <span>Change Goal</span>
+              <span>{currentGoal === 'Not set yet' ? 'Set Goal' : 'Change Goal'}</span>
             </button>
           )}
         </div>

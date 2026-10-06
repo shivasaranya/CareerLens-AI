@@ -196,12 +196,14 @@ export const CareerDNAView: React.FC<CareerDNAViewProps> = ({
           </div>
           <div className="space-y-1 pt-1">
             <p className="text-xs font-bold text-slate-900">
-              {student.careerGoal || 'General Engineering & Technology'}
+              {student.careerGoal || 'Goal not set yet'}
             </p>
             <p className="text-xs text-slate-600 leading-relaxed">
-              {student.skills.length > 0
-                ? `Mapped against ${student.skills.length} skills and ${student.projects.length} project(s) in your profile.`
-                : 'Enter your skills to see exact missing requirements for this role.'}
+              {student.careerGoal
+                ? (student.skills.length > 0
+                    ? `Mapped against ${student.skills.length} skills and ${student.projects.length} project(s) in your profile.`
+                    : 'Enter your skills to see exact missing requirements for this role.')
+                : 'Set your career goal to view dedicated role prerequisites.'}
             </p>
           </div>
           <div className="pt-2 border-t border-amber-100 flex items-center justify-between">

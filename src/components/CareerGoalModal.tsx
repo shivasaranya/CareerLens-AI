@@ -43,9 +43,15 @@ export const CareerGoalModal: React.FC<CareerGoalModalProps> = ({
   currentGoal,
   onUpdateGoal,
 }) => {
-  const [selectedGoal, setSelectedGoal] = useState<string>(currentGoal || 'Machine Learning Engineer');
+  const [selectedGoal, setSelectedGoal] = useState<string>(currentGoal || '');
   const [customGoal, setCustomGoal] = useState<string>('');
   const [isReanalyzing, setIsReanalyzing] = useState<boolean>(false);
+
+  // Sync when reopened or currentGoal changes
+  React.useEffect(() => {
+    setSelectedGoal(currentGoal || '');
+    setCustomGoal('');
+  }, [currentGoal, isOpen]);
 
   if (!isOpen) return null;
 
@@ -63,7 +69,7 @@ export const CareerGoalModal: React.FC<CareerGoalModalProps> = ({
       onUpdateGoal(finalGoal);
       setIsReanalyzing(false);
       onClose();
-    }, 750);
+    }, 600);
   };
 
   return (
@@ -87,9 +93,11 @@ export const CareerGoalModal: React.FC<CareerGoalModalProps> = ({
             <Target className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-xl font-black text-slate-900">Change Career Goal</h2>
+            <h2 className="text-xl font-black text-slate-900">
+              {currentGoal ? 'Change Career Goal' : 'Set My Career Goal'}
+            </h2>
             <p className="text-xs text-slate-500">
-              CareerLens will instantly re-calibrate your match rankings, skill map, and missing skill analysis.
+              CareerLens will dynamically calibrate your match rankings, skill map, and missing skill analysis.
             </p>
           </div>
         </div>
@@ -98,7 +106,9 @@ export const CareerGoalModal: React.FC<CareerGoalModalProps> = ({
         <div className="my-4 p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs">
           <div className="flex items-center space-x-2">
             <span className="text-slate-500">Current Active Goal:</span>
-            <strong className="text-slate-900 font-bold">{currentGoal || 'Not specified'}</strong>
+            <strong className={`font-bold ${currentGoal ? 'text-slate-900' : 'text-amber-600'}`}>
+              {currentGoal || 'Not set yet'}
+            </strong>
           </div>
           <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
             Editable Anytime
@@ -161,7 +171,7 @@ export const CareerGoalModal: React.FC<CareerGoalModalProps> = ({
             type="button"
             onClick={onClose}
             disabled={isReanalyzing}
-            className="px-4 py-2.5 rounded-xl text-slate-600 hover:text-slate-800 text-xs font-bold transition-colors"
+            className="px-4 py-2.5 rounded-xl text-slate-600 hover:text-slate-800 text-xs font-bold transition-colors cursor-pointer"
           >
             Cancel
           </button>
@@ -169,18 +179,18 @@ export const CareerGoalModal: React.FC<CareerGoalModalProps> = ({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={isReanalyzing}
-            className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 hover:shadow-indigo-600/30 transition-all flex items-center space-x-2 cursor-pointer"
+            disabled={isReanalyzing || (!selectedGoal && !customGoal.trim())}
+            className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs shadow-md shadow-indigo-600/20 hover:shadow-indigo-600/30 transition-all flex items-center space-x-2 cursor-pointer"
           >
             {isReanalyzing ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Re-analyzing My Opportunities...</span>
+                <span>Calibrating Intelligence...</span>
               </>
             ) : (
               <>
                 <Sparkles className="w-4 h-4" />
-                <span>Re-analyze My Opportunities</span>
+                <span>{currentGoal ? 'Re-analyze My Opportunities' : 'Set My Career Goal'}</span>
               </>
             )}
           </button>

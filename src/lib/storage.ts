@@ -1,5 +1,6 @@
 import { StudentProfile, Opportunity, ApplicationTrackerItem, AuthUser } from '@/types';
 import { SEED_OPPORTUNITIES } from '@/data/opportunities';
+import { SHIVA_SARANYA_STARTER_PROFILE } from '@/data/defaultProfile';
 
 const USERS_KEY = 'careerlens_users_v2';
 const CURRENT_USER_KEY = 'careerlens_current_user_v2';
@@ -55,6 +56,16 @@ export function getCurrentUser(): AuthUser | null {
   try {
     const raw = localStorage.getItem(CURRENT_USER_KEY);
     if (raw) return JSON.parse(raw);
+
+    // Initial default student: Shiva Saranya
+    const defaultUser: AuthUser = {
+      id: 'user-shiva-saranya',
+      name: 'Shiva Saranya',
+      email: 'shivasaranya@example.com',
+      createdAt: new Date().toISOString(),
+    };
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(defaultUser));
+    return defaultUser;
   } catch (e) {
     console.error('Failed to load current user', e);
   }
@@ -118,7 +129,20 @@ export function getUserProfile(userId: string): StudentProfile | null {
   if (typeof window === 'undefined' || !userId) return null;
   try {
     const raw = localStorage.getItem(`careerlens_profile_${userId}`);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if ((userId === 'user-shiva-saranya' || userId.toLowerCase().includes('shiva')) && (!parsed.skills || parsed.skills.length === 0)) {
+        localStorage.setItem(`careerlens_profile_${userId}`, JSON.stringify(SHIVA_SARANYA_STARTER_PROFILE));
+        return SHIVA_SARANYA_STARTER_PROFILE;
+      }
+      return parsed;
+    }
+
+    // Initial starter profile for Shiva Saranya (2nd-Year CSIT Student at SRKR)
+    if (userId === 'user-shiva-saranya' || userId.toLowerCase().includes('shiva')) {
+      localStorage.setItem(`careerlens_profile_${userId}`, JSON.stringify(SHIVA_SARANYA_STARTER_PROFILE));
+      return SHIVA_SARANYA_STARTER_PROFILE;
+    }
   } catch (e) {
     console.error('Failed to load user profile', e);
   }

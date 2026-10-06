@@ -54,6 +54,8 @@ export interface ProjectRecord {
   description: string;
   techStack: string[];
   role?: string;
+  projectType?: string;
+  keyLearnings?: string[];
   githubUrl?: string;
   liveDemoUrl?: string;
   outcome?: string;
@@ -66,6 +68,9 @@ export interface ExperienceRecord {
   startDate: string;
   endDate: string;
   description: string;
+  type?: string; // Internship, Part-time, Research, Freelance, Volunteering, Open-source
+  skillsUsed?: string[];
+  proofUrl?: string;
 }
 
 export interface CertificationRecord {
@@ -74,6 +79,9 @@ export interface CertificationRecord {
   organization: string;
   issueDate?: string;
   credentialUrl?: string;
+  credentialId?: string;
+  category?: string;
+  certificateFileUrl?: string;
   achievements?: string;
 }
 
