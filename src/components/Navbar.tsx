@@ -125,6 +125,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             <button
+              onClick={() => setActiveTab('career-map')}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                activeTab === 'career-map'
+                  ? 'text-indigo-700 bg-indigo-50/80'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <GitBranch className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Career Map</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('skill-map')}
               className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
                 activeTab === 'skill-map'
@@ -134,6 +146,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Layers className="w-3.5 h-3.5 text-indigo-600" />
               <span>Skill Map</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('skill-gaps')}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                activeTab === 'skill-gaps'
+                  ? 'text-indigo-700 bg-indigo-50/80'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <Target className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Skill Gaps</span>
             </button>
 
             <button
@@ -244,9 +268,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           {[
             { id: 'landing', label: 'Home', icon: Compass },
             ...(hasProfile ? [{ id: 'dashboard', label: 'Dashboard', icon: GitBranch }] : []),
+            { id: 'career-map', label: 'Career Map', icon: GitBranch },
+            { id: 'skill-map', label: 'Skill Map', icon: Layers },
+            { id: 'skill-gaps', label: 'Skill Gaps', icon: Target },
             { id: 'opportunities', label: 'Opportunities', icon: Target },
             { id: 'jobs', label: 'Jobs', icon: Briefcase },
-            { id: 'skill-map', label: 'Skill Map', icon: Layers },
             { id: 'what-if', label: 'What-If', icon: Sparkles },
           ].map((item) => {
             const Icon = item.icon;

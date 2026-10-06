@@ -32,6 +32,11 @@ import {
 import { rankOpportunities } from '@/lib/matching-engine';
 import { analyzeSkillGaps } from '@/lib/skill-gap-engine';
 import { 
+  computeDetailedSkillGaps, 
+  CAREER_PATHS, 
+  categorizeStudentSkill 
+} from '@/lib/career-intelligence';
+import { 
   Sparkles, 
   Target, 
   GitBranch, 
@@ -137,6 +142,60 @@ export default function DashboardPage() {
     };
   }, [matchResults, skillGaps, hasProfile, student]);
 
+  // Section 16: Career Intelligence Metrics
+  const careerIntel = useMemo(() => {
+    if (!student) {
+      return {
+        hasGoal: false,
+        careerGoal: 'Not set',
+        skillsCount: 0,
+        readinessPercent: 0,
+        priorityGapsCount: 0,
+        strongSkillsCount: 0,
+        recommendedNextSkill: 'Python',
+      };
+    }
+
+    const hasGoal = Boolean(student.careerGoal && student.careerGoal.trim().length > 0);
+    const detailedGaps = hasGoal ? computeDetailedSkillGaps(student, opportunities) : [];
+    const strongSkillsCount = student.skills.filter((s) => categorizeStudentSkill(s) === 'Strong').length;
+
+    let readinessPercent = 0;
+    let recommendedNextSkill = 'Python';
+
+    if (hasGoal) {
+      const gLower = student.careerGoal.toLowerCase();
+      const path = CAREER_PATHS.find((p) =>
+        p.targetRoles.some((r) => r.toLowerCase().includes(gLower) || gLower.includes(r.toLowerCase())) ||
+        p.name.toLowerCase().includes(gLower) ||
+        gLower.includes(p.name.toLowerCase())
+      ) || CAREER_PATHS[0];
+
+      const allReq = [...path.essentialSkills, ...path.recommendedSkills];
+      const studentSkillNames = new Set(student.skills.map((s) => s.name.toLowerCase()));
+      let matched = 0;
+      allReq.forEach((req) => {
+        const rLower = req.toLowerCase();
+        if (Array.from(studentSkillNames).some((s) => s.includes(rLower) || rLower.includes(s))) {
+          matched++;
+        }
+      });
+
+      readinessPercent = Math.min(100, Math.max(25, Math.round((matched / Math.max(1, allReq.length)) * 100)));
+      recommendedNextSkill = detailedGaps[0]?.skill || (path.essentialSkills.find((s) => !studentSkillNames.has(s.toLowerCase())) || 'Python');
+    }
+
+    return {
+      hasGoal,
+      careerGoal: student.careerGoal || 'Not set',
+      skillsCount: student.skills.length,
+      readinessPercent,
+      priorityGapsCount: detailedGaps.filter((g) => g.priority === 'Critical' || g.priority === 'High Priority').length,
+      strongSkillsCount,
+      recommendedNextSkill,
+    };
+  }, [student, opportunities]);
+
   // Segregate Recommended Jobs vs Recommended Opportunities
   const recommendedJobs = useMemo(() => {
     return matchResults
@@ -235,9 +294,11 @@ export default function DashboardPage() {
         activeTab="dashboard"
         setActiveTab={(tab) => {
           if (tab === 'landing') router.push('/');
+          else if (tab === 'career-map') router.push('/career-map');
+          else if (tab === 'skill-map') router.push('/skill-map');
+          else if (tab === 'skill-gaps') router.push('/skill-gaps');
           else if (tab === 'opportunities') router.push('/opportunities');
           else if (tab === 'jobs') router.push('/jobs');
-          else if (tab === 'skill-map') router.push('/skill-map');
           else if (tab === 'what-if') router.push('/what-if');
         }}
         student={student}
@@ -394,6 +455,154 @@ export default function DashboardPage() {
                   </span>
                 </div>
               </div>
+            </div>
+
+            {/* SECTION 16: DASHBOARD CAREER INTELLIGENCE WIDGET */}
+            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/90 shadow-sm relative overflow-hidden">
+              {!careerIntel.hasGoal ? (
+                /* State: If no goal is selected */
+                <div className="space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold uppercase tracking-wider mb-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Career Navigation</span>
+                      </div>
+                      <h3 className="text-xl sm:text-2xl font-black text-[#172033] tracking-tight">
+                        Career Intelligence
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Dynamic trajectory mapping and opportunity qualification engine
+                      </p>
+                    </div>
+
+                    <div className="flex items-center space-x-2.5">
+                      <button
+                        onClick={() => router.push('/career-map')}
+                        className="px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-50 text-indigo-700 border border-indigo-200 font-bold text-xs shadow-2xs transition-all flex items-center space-x-1.5 cursor-pointer"
+                      >
+                        <GitBranch className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Explore Career Map</span>
+                      </button>
+                      <button
+                        onClick={() => setIsGoalModalOpen(true)}
+                        className="px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all flex items-center space-x-1.5 cursor-pointer"
+                      >
+                        <Target className="w-3.5 h-3.5" />
+                        <span>Choose Career Goal</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-4 border-t border-slate-100">
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Career Goal</span>
+                      <strong className="text-base font-black text-slate-700 block mt-1">Not set</strong>
+                      <span className="text-[11px] text-slate-500 mt-1 block">Choose a role to configure requirements</span>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Skills</span>
+                      <strong className="text-base font-black text-slate-900 block mt-1">
+                        {careerIntel.skillsCount} foundational skills
+                      </strong>
+                      <span className="text-[11px] text-slate-500 mt-1 block">Coursework, syntax, and starter tools</span>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Skill Gaps</span>
+                      <strong className="text-base font-black text-amber-700 block mt-1">
+                        Set a career goal to analyze
+                      </strong>
+                      <span className="text-[11px] text-slate-500 mt-1 block">Calculated dynamically against target postings</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* State: After a goal is selected */
+                <div className="space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold uppercase tracking-wider mb-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Active Career Intelligence</span>
+                      </div>
+                      <h3 className="text-xl sm:text-2xl font-black text-[#172033] tracking-tight">
+                        Career Intelligence
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Calibrated for <strong className="text-indigo-700 font-bold">{careerIntel.careerGoal}</strong>
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => router.push('/skill-map')}
+                        className="px-3.5 py-2.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 font-bold text-xs shadow-2xs transition-all flex items-center space-x-1.5 cursor-pointer"
+                      >
+                        <Layers className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>View Skill Map</span>
+                      </button>
+                      <button
+                        onClick={() => router.push('/skill-gaps')}
+                        className="px-3.5 py-2.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 font-bold text-xs shadow-2xs transition-all flex items-center space-x-1.5 cursor-pointer"
+                      >
+                        <Target className="w-3.5 h-3.5 text-rose-600" />
+                        <span>View Skill Gaps</span>
+                      </button>
+                      <button
+                        onClick={() => router.push('/career-map')}
+                        className="px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all flex items-center space-x-1.5 cursor-pointer"
+                      >
+                        <GitBranch className="w-3.5 h-3.5" />
+                        <span>View Career Map</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-4 border-t border-slate-100">
+                    <div className="p-3.5 rounded-2xl bg-indigo-50/60 border border-indigo-100">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Target</span>
+                      <strong className="text-xs font-black text-indigo-900 block truncate mt-1" title={careerIntel.careerGoal}>
+                        {careerIntel.careerGoal}
+                      </strong>
+                      <span className="text-[10px] text-indigo-600 mt-0.5 block">Active trajectory</span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-100">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Skill Readiness</span>
+                      <strong className="text-xl font-black text-emerald-700 block font-mono mt-1">
+                        {careerIntel.readinessPercent}%
+                      </strong>
+                      <span className="text-[10px] text-emerald-600 mt-0.5 block">Pre-requisite match</span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-rose-50/60 border border-rose-100">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Priority Gaps</span>
+                      <strong className="text-xl font-black text-rose-700 block font-mono mt-1">
+                        {careerIntel.priorityGapsCount}
+                      </strong>
+                      <span className="text-[10px] text-rose-600 mt-0.5 block">Critical requirements</span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-100">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Strong Skills</span>
+                      <strong className="text-xl font-black text-emerald-700 block font-mono mt-1">
+                        {careerIntel.strongSkillsCount}
+                      </strong>
+                      <span className="text-[10px] text-emerald-600 mt-0.5 block">Evidence-backed</span>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-purple-50/60 border border-purple-100 col-span-2 sm:col-span-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Recommended Next</span>
+                      <strong className="text-xs font-black text-purple-900 block truncate mt-1" title={careerIntel.recommendedNextSkill}>
+                        {careerIntel.recommendedNextSkill}
+                      </strong>
+                      <span className="text-[10px] text-purple-700 font-bold mt-0.5 block">Highest ROI skill</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Profile Status & Readiness Checklist (Section 7) */}
