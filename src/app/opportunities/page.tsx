@@ -104,7 +104,7 @@ export default function OpportunitiesPage() {
     return opportunities.filter((opp) => {
       // Type filter
       if (selectedType !== 'All') {
-        if (selectedType === 'Jobs' && opp.type !== 'Full-time') return false;
+        if (selectedType === 'Jobs' && opp.type !== 'Full-time' && opp.type !== 'Job') return false;
         else if (selectedType !== 'Jobs' && opp.type !== selectedType) return false;
       }
 
@@ -232,6 +232,8 @@ export default function OpportunitiesPage() {
         setActiveTab={(tab) => {
           if (tab === 'landing') router.push('/');
           else if (tab === 'dashboard') router.push('/dashboard');
+          else if (tab === 'jobs') router.push('/jobs');
+          else if (tab === 'skill-map') router.push('/skill-map');
           else if (tab === 'what-if') router.push('/what-if');
           else if (tab === 'admin') router.push('/dashboard');
         }}

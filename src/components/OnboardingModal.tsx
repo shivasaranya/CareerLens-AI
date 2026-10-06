@@ -1405,18 +1405,53 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Custom Career Goal *
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  What do you want to become? (Select or Type)
+                </label>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {[
+                    'AI/ML Engineer',
+                    'Software Engineer',
+                    'Data Scientist',
+                    'Data Analyst',
+                    'Cloud Engineer',
+                    'DevOps Engineer',
+                    'Cybersecurity Engineer',
+                    'UI/UX Designer',
+                    'Product Manager',
+                    'Researcher',
+                    'Electronics Engineer',
+                  ].map((goalOption) => {
+                    const isSelected = formData.careerGoal === goalOption;
+                    return (
+                      <button
+                        key={goalOption}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, careerGoal: goalOption })}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        {goalOption}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+                  Or specify custom career goal:
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={formData.careerGoal}
                   onChange={(e) => setFormData({ ...formData, careerGoal: e.target.value })}
-                  placeholder='e.g. "I want to become a Machine Learning Engineer working on large generative models."'
+                  placeholder='e.g. Machine Learning Engineer, Cloud Security Architect, Quantitative Developer...'
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500"
                 />
                 <p className="text-[11px] text-slate-400 mt-1">
-                  You are not forced to select predefined careers. Describe in your own words what you want to achieve.
+                  You can edit your career goal at any time on your dashboard to instantly recalculate recommendations.
                 </p>
               </div>
             </div>

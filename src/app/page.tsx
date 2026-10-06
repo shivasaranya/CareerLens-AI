@@ -106,6 +106,8 @@ export default function HomePage() {
         activeTab="landing"
         setActiveTab={(tab) => {
           if (tab === 'opportunities') router.push('/opportunities');
+          else if (tab === 'jobs') router.push('/jobs');
+          else if (tab === 'skill-map') router.push('/skill-map');
           else if (tab === 'dashboard') router.push('/dashboard');
           else if (tab === 'what-if') router.push('/what-if');
         }}
@@ -124,7 +126,11 @@ export default function HomePage() {
         <LandingPage
           onBuildProfile={() => setIsOnboardingOpen(true)}
           onExploreOpportunities={(category) => {
-            router.push('/opportunities');
+            if ((category as string) === 'Jobs' || category === 'Job' || category === 'Full-time') {
+              router.push('/jobs');
+            } else {
+              router.push('/opportunities');
+            }
           }}
           onSignIn={() => {
             setAuthModalMode('signin');

@@ -92,6 +92,8 @@ export default function WhatIfPage() {
         setActiveTab={(tab) => {
           if (tab === 'landing') router.push('/');
           else if (tab === 'opportunities') router.push('/opportunities');
+          else if (tab === 'jobs') router.push('/jobs');
+          else if (tab === 'skill-map') router.push('/skill-map');
           else if (tab === 'dashboard') router.push('/dashboard');
         }}
         student={student}

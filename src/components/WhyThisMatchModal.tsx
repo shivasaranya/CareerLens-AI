@@ -17,8 +17,8 @@ import { MatchResult } from '@/types';
 interface WhyThisMatchModalProps {
   matchResult: MatchResult | null;
   onClose: () => void;
-  onOpenRoadmap: (match: MatchResult) => void;
-  onOpenWhatIf: () => void;
+  onOpenRoadmap?: (match: MatchResult) => void;
+  onOpenWhatIf?: () => void;
   defaultTab?: 'why' | 'why-not-100';
 }
 
@@ -256,7 +256,7 @@ export const WhyThisMatchModal: React.FC<WhyThisMatchModalProps> = ({
           <button
             onClick={() => {
               onClose();
-              onOpenWhatIf();
+              if (onOpenWhatIf) onOpenWhatIf();
             }}
             className="px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer shadow-2xs"
           >
@@ -267,7 +267,7 @@ export const WhyThisMatchModal: React.FC<WhyThisMatchModalProps> = ({
           <button
             onClick={() => {
               onClose();
-              onOpenRoadmap(matchResult);
+              if (onOpenRoadmap) onOpenRoadmap(matchResult);
             }}
             className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center space-x-1.5 shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
           >

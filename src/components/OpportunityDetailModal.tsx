@@ -206,12 +206,33 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
                 </div>
               </div>
 
+              {/* Responsibilities if available */}
+              {opportunity.responsibilities && opportunity.responsibilities.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                    Key Responsibilities
+                  </h4>
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                    <ul className="space-y-1.5 list-disc list-inside text-xs text-slate-700">
+                      {opportunity.responsibilities.map((resp, rIdx) => (
+                        <li key={rIdx} className="leading-relaxed">{resp}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
               {/* Eligibility */}
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
                   Eligibility Criteria
                 </h4>
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                  {opportunity.experienceLevel && (
+                    <div className="text-xs text-slate-700">
+                      <strong className="text-slate-900">Experience Level:</strong> {opportunity.experienceLevel}
+                    </div>
+                  )}
                   {opportunity.minGpaOrCriteria && (
                     <div className="text-xs text-slate-700">
                       <strong className="text-slate-900">Academic Standing:</strong> {opportunity.minGpaOrCriteria}
@@ -283,31 +304,42 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
                     </div>
                   </div>
 
-                  {/* 5-Layer Breakdown */}
+                  {/* Eligibility Alert if issue present */}
+                  {matchResult.eligibilityIssue && (
+                    <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start space-x-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="block font-bold">Eligibility Consideration Noted</strong>
+                        <span className="text-amber-800">{matchResult.eligibilityIssue}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 5-Layer Fit Breakdown */}
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                      5-Layer Fit Breakdown
+                      5-Factor Transparent Scoring Breakdown
                     </h4>
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
                       <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Skills</span>
+                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Skills (35%)</span>
                         <span className="font-mono font-extrabold text-sm text-slate-800">{matchResult.breakdown.skillsScore}%</span>
                       </div>
                       <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Projects</span>
+                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Eligibility (25%)</span>
+                        <span className="font-mono font-extrabold text-sm text-slate-800">{matchResult.breakdown.eligibilityScore}%</span>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Goal Fit (20%)</span>
+                        <span className="font-mono font-extrabold text-sm text-slate-800">{matchResult.breakdown.careerGoalScore || matchResult.breakdown.careerInterestScore}%</span>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Projects (10%)</span>
                         <span className="font-mono font-extrabold text-sm text-slate-800">{matchResult.breakdown.projectsScore}%</span>
                       </div>
                       <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Education</span>
-                        <span className="font-mono font-extrabold text-sm text-slate-800">{matchResult.breakdown.educationScore}%</span>
-                      </div>
-                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Goal Fit</span>
-                        <span className="font-mono font-extrabold text-sm text-slate-800">{matchResult.breakdown.careerInterestScore}%</span>
-                      </div>
-                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Eligibility</span>
-                        <span className="font-mono font-extrabold text-sm text-slate-800">{matchResult.breakdown.eligibilityScore}%</span>
+                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Prefs (10%)</span>
+                        <span className="font-mono font-extrabold text-sm text-slate-800">{matchResult.breakdown.preferencesScore || 75}%</span>
                       </div>
                     </div>
                   </div>
@@ -346,6 +378,34 @@ export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
                       </div>
                     </div>
                   </div>
+
+                  {/* Application Readiness Checklist */}
+                  {matchResult.readinessChecklist && matchResult.readinessChecklist.length > 0 && (
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                        Application Readiness Checklist
+                      </span>
+                      <div className="space-y-1.5">
+                        {matchResult.readinessChecklist.map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-xs p-1.5 rounded-lg bg-white border border-slate-200/60">
+                            <div className="flex items-center space-x-2">
+                              {item.passed ? (
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                              ) : (
+                                <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                              )}
+                              <span className="font-semibold text-slate-800">{item.label}</span>
+                            </div>
+                            {item.note && (
+                              <span className="text-[11px] text-slate-500 max-w-[300px] truncate text-right">
+                                {item.note}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Why it isn't 100% */}
                   {matchResult.whyNot100Explanation && (

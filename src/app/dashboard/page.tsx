@@ -7,9 +7,11 @@ import { OpportunityRadar } from '@/components/OpportunityRadar';
 import { CareerDNAView } from '@/components/CareerDNAView';
 import { OpportunityDetailModal } from '@/components/OpportunityDetailModal';
 import { WhyThisMatchModal } from '@/components/WhyThisMatchModal';
+import { CareerGoalModal } from '@/components/CareerGoalModal';
 import { OnboardingModal } from '@/components/OnboardingModal';
 import { AuthModal } from '@/components/AuthModal';
 import { HeroCareerNetwork } from '@/components/HeroCareerNetwork';
+import { SkillMapVisual } from '@/components/SkillMapVisual';
 import { 
   Opportunity, 
   StudentProfile, 
@@ -22,22 +24,29 @@ import {
   getCurrentUser, 
   setCurrentUser,
   getUserProfile, 
-  saveUserProfile,
-  getUserApplications,
-  saveUserApplications,
+  saveUserProfile, 
+  getUserApplications, 
+  saveUserApplications, 
   signOut 
 } from '@/lib/storage';
 import { rankOpportunities } from '@/lib/matching-engine';
+import { analyzeSkillGaps } from '@/lib/skill-gap-engine';
 import { 
   Sparkles, 
   Target, 
   GitBranch, 
   Layers, 
   CheckCircle2, 
-  ArrowRight,
-  TrendingUp,
-  Clock,
-  Briefcase
+  ArrowRight, 
+  TrendingUp, 
+  Clock, 
+  Briefcase,
+  Edit3,
+  Compass,
+  AlertTriangle,
+  ChevronRight,
+  ShieldCheck,
+  Check
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -53,6 +62,7 @@ export default function DashboardPage() {
   const [selectedOppForDetail, setSelectedOppForDetail] = useState<{ opp: Opportunity; match?: MatchResult | null } | null>(null);
   const [selectedMatchForModal, setSelectedMatchForModal] = useState<MatchResult | null>(null);
   const [whyModalType, setWhyModalType] = useState<'why' | 'why-not-100'>('why');
+  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -83,7 +93,27 @@ export default function DashboardPage() {
     return rankOpportunities(opportunities, student);
   }, [opportunities, student, hasProfile]);
 
-  // Genuine dashboard metrics
+  // Skill Gaps calculated from target role and real opportunities
+  const skillGaps = useMemo(() => {
+    if (!hasProfile || !student) return [];
+    return analyzeSkillGaps(student, opportunities);
+  }, [student, opportunities, hasProfile]);
+
+  // Authentic Profile Completion Percentage calculation
+  const profileCompletion = useMemo(() => {
+    if (!student) return 0;
+    let score = 0;
+    if (student.name && student.email) score += 15;
+    if (student.institution && student.branch) score += 20;
+    if (student.skills && student.skills.length >= 3) score += 25;
+    else if (student.skills && student.skills.length > 0) score += 15;
+    if (student.projects && student.projects.length >= 1) score += 20;
+    if (student.careerGoal && student.careerGoal.trim().length > 0) score += 10;
+    if (student.preferences && student.preferences.types && student.preferences.types.length > 0) score += 10;
+    return Math.min(100, score);
+  }, [student]);
+
+  // Dashboard Metrics
   const dashboardStats = useMemo(() => {
     if (!hasProfile) return null;
     let strongCount = 0;
@@ -99,11 +129,37 @@ export default function DashboardPage() {
     return {
       strongMatches: strongCount,
       nearMatches: nearCount,
+      priorityGapsCount: skillGaps.filter((g) => g.priority === 'Critical' || g.priority === 'High Priority').length,
       upcomingDeadlines,
       skillsCount: student?.skills.length || 0,
       projectsCount: student?.projects.length || 0,
     };
-  }, [matchResults, hasProfile, student]);
+  }, [matchResults, skillGaps, hasProfile, student]);
+
+  // Segregate Recommended Jobs vs Recommended Opportunities
+  const recommendedJobs = useMemo(() => {
+    return matchResults
+      .filter((m) => m.opportunity.type === 'Job' || m.opportunity.type === 'Full-time')
+      .slice(0, 3);
+  }, [matchResults]);
+
+  const recommendedOtherOpportunities = useMemo(() => {
+    return matchResults
+      .filter((m) => m.opportunity.type !== 'Job' && m.opportunity.type !== 'Full-time')
+      .slice(0, 3);
+  }, [matchResults]);
+
+  const handleUpdateGoal = (newGoal: string) => {
+    if (!student || !currentUser) return;
+    const updated = {
+      ...student,
+      careerGoal: newGoal,
+      updatedAt: new Date().toISOString(),
+    };
+    setStudent(updated);
+    saveUserProfile(currentUser.id, updated);
+    showToast(`Career Goal updated to ${newGoal}! Re-analyzing landscape...`);
+  };
 
   const handleAuthSuccess = (user: AuthUser) => {
     setCurrentUserState(user);
@@ -179,6 +235,8 @@ export default function DashboardPage() {
         setActiveTab={(tab) => {
           if (tab === 'landing') router.push('/');
           else if (tab === 'opportunities') router.push('/opportunities');
+          else if (tab === 'jobs') router.push('/jobs');
+          else if (tab === 'skill-map') router.push('/skill-map');
           else if (tab === 'what-if') router.push('/what-if');
         }}
         student={student}
@@ -191,13 +249,13 @@ export default function DashboardPage() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {hasProfile ? (
           <div className="space-y-10">
-            {/* 1. Welcome Banner & Live Overview Cards */}
+            {/* 1. Welcome Banner & Live Overview */}
             <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold uppercase tracking-wider mb-2">
                     <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>Your CareerLens Intelligence</span>
+                    <span>Opportunity Intelligence Dashboard</span>
                   </div>
                   <h1 className="text-3xl sm:text-4xl font-black text-[#172033] tracking-tight">
                     Welcome back, {student!.name}
@@ -224,6 +282,40 @@ export default function DashboardPage() {
                 </div>
               </div>
 
+              {/* Editable Career Goal Card with Re-Analyze Engine */}
+              <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-900 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
+                <div className="absolute right-0 top-0 bottom-0 w-80 bg-gradient-to-l from-white/10 to-transparent pointer-events-none" />
+                <div className="space-y-1 z-10">
+                  <div className="flex items-center space-x-2">
+                    <Target className="w-4 h-4 text-cyan-300" />
+                    <span className="text-xs uppercase tracking-wider font-bold text-indigo-200">
+                      Active Career Trajectory
+                    </span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                    {student!.careerGoal || 'Machine Learning Engineer'}
+                  </h2>
+                  <p className="text-xs text-indigo-200 max-w-xl">
+                    All match scores, skill gap priorities, and job rankings are dynamically calibrated to this career destination.
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 z-10">
+                  <div className="bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-white/20 text-xs">
+                    <span className="text-indigo-200 block text-[10px] uppercase font-bold">Profile Depth</span>
+                    <strong className="text-white font-black text-sm">{profileCompletion}% Complete</strong>
+                  </div>
+
+                  <button
+                    onClick={() => setIsGoalModalOpen(true)}
+                    className="px-5 py-3 rounded-2xl bg-white hover:bg-slate-100 text-indigo-900 font-black text-xs shadow-lg transition-all flex items-center space-x-2 cursor-pointer"
+                  >
+                    <Edit3 className="w-4 h-4 text-indigo-600" />
+                    <span>Change Goal</span>
+                  </button>
+                </div>
+              </div>
+
               {/* 5 Dynamic Overview Metric Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5 pt-2">
                 <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
@@ -239,52 +331,239 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Skills Tracked</span>
-                  <span className="font-mono text-2xl font-black text-[#172033] mt-1 block">{dashboardStats?.skillsCount}</span>
-                  <span className="text-[10px] text-slate-500 font-medium">Verified by evidence</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Priority Skill Gaps</span>
+                  <span className="font-mono text-2xl font-black text-rose-600 mt-1 block">{dashboardStats?.priorityGapsCount}</span>
+                  <span className="text-[10px] text-slate-500 font-medium">Critical for target goal</span>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Projects Added</span>
-                  <span className="font-mono text-2xl font-black text-violet-600 mt-1 block">{dashboardStats?.projectsCount}</span>
-                  <span className="text-[10px] text-slate-500 font-medium">Technical artifacts</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Verified Skills</span>
+                  <span className="font-mono text-2xl font-black text-[#172033] mt-1 block">{dashboardStats?.skillsCount}</span>
+                  <span className="text-[10px] text-slate-500 font-medium">Backed by evidence</span>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs col-span-2 sm:col-span-1">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Urgent Deadlines</span>
-                  <span className="font-mono text-2xl font-black text-rose-600 mt-1 block">{dashboardStats?.upcomingDeadlines}</span>
+                  <span className="font-mono text-2xl font-black text-amber-600 mt-1 block">{dashboardStats?.upcomingDeadlines}</span>
                   <span className="text-[10px] text-slate-500 font-medium">≤ 14 days remaining</span>
                 </div>
               </div>
             </div>
 
-            {/* 2. Signature Visual: "Your Opportunity Landscape" Interactive Graph */}
+            {/* 2. Top Recommended Jobs Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-black text-[#172033] tracking-tight flex items-center space-x-2">
+                    <Briefcase className="w-5 h-5 text-indigo-600" />
+                    <span>Recommended Jobs</span>
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Highest AI-estimated matches for your verified skills and target role.
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push('/jobs')}
+                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Explore all jobs</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {recommendedJobs.map((m) => (
+                  <div
+                    key={m.opportunity.id}
+                    className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs hover:shadow-md hover:border-indigo-200 transition-all flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <span className="text-xs font-bold text-slate-500">{m.opportunity.organization}</span>
+                        <span className="font-mono text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                          {m.overallMatchScore}% match
+                        </span>
+                      </div>
+                      <h3 className="text-sm font-black text-slate-900 line-clamp-2 mb-2">
+                        {m.opportunity.title}
+                      </h3>
+                      <div className="flex items-center gap-2 text-[10px] text-slate-500 mb-3">
+                        <span>{m.opportunity.location}</span>
+                        <span>·</span>
+                        <span>{m.opportunity.workMode}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setSelectedOppForDetail({ opp: m.opportunity, match: m })}
+                      className="w-full py-2 rounded-xl bg-slate-50 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 font-bold text-xs transition-colors flex items-center justify-center space-x-1 cursor-pointer"
+                    >
+                      <span>View Details</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 3. Top Recommended Opportunities (Internships, Hackathons, Research, Fellowships) */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-black text-[#172033] tracking-tight flex items-center space-x-2">
+                    <Compass className="w-5 h-5 text-indigo-600" />
+                    <span>Recommended Opportunities (Internships, Hackathons, Research)</span>
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    High-impact global programs to build your portfolio and gain credentials.
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push('/opportunities')}
+                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Explore opportunity universe</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {recommendedOtherOpportunities.map((m) => (
+                  <div
+                    key={m.opportunity.id}
+                    className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs hover:shadow-md hover:border-indigo-200 transition-all flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <span className="text-xs font-bold text-slate-500">{m.opportunity.organization}</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full">
+                          {m.opportunity.type}
+                        </span>
+                      </div>
+                      <h3 className="text-sm font-black text-slate-900 line-clamp-2 mb-2">
+                        {m.opportunity.title}
+                      </h3>
+                      <div className="text-[11px] text-slate-600 line-clamp-2 mb-3">
+                        {m.opportunity.description}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                      <span className="font-mono text-xs font-bold text-slate-500">
+                        {m.overallMatchScore}% match
+                      </span>
+                      <button
+                        onClick={() => setSelectedOppForDetail({ opp: m.opportunity, match: m })}
+                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-0.5 cursor-pointer"
+                      >
+                        <span>Details</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 4. Priority Skill Gaps Section (Derived from actual role data) */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-black text-[#172033] tracking-tight flex items-center space-x-2">
+                    <Clock className="w-5 h-5 text-rose-600" />
+                    <span>Priority Skill Gaps for {student!.careerGoal || 'Target Role'}</span>
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Calculated from target role prerequisites minus your demonstrated profile skills.
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push('/skill-map')}
+                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Open Full Skill Map</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {skillGaps.slice(0, 3).map((gap, idx) => (
+                  <div key={idx} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <strong className="text-base font-black text-slate-900">{gap.skill}</strong>
+                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                        gap.priority === 'Critical' ? 'bg-rose-50 text-rose-700 border border-rose-200' :
+                        gap.priority === 'High Priority' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                        'bg-slate-100 text-slate-700'
+                      }`}>
+                        {gap.priority || 'Critical'}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                        Why do I need this?
+                      </span>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        {gap.whyNeeded || gap.description}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100 grid grid-cols-2 gap-2 text-[11px]">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Current Level</span>
+                        <strong className="text-slate-700 font-semibold">{gap.currentLevel || 'No demonstrated experience'}</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Target Level</span>
+                        <strong className="text-indigo-700 font-semibold">{gap.targetLevel || 'Intermediate'}</strong>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/60 text-[11px] text-slate-700">
+                      <span className="font-bold block text-slate-900 mb-0.5">Recommended Action:</span>
+                      {gap.recommendedAction || 'Build a dedicated GitHub project demonstrating this competency.'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 5. Signature Interactive Visual: Skill Map Topology */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-black text-[#172033] tracking-tight">
-                    Your Opportunity Landscape
+                    Your Skill Map Topology
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Interactive mapping of your declared skills through AI career pathways to active opportunities.
+                    Live interactive mapping: YOU → Your Skills → Career Goal → Role Requirements → Opportunities.
                   </p>
                 </div>
+                <button
+                  onClick={() => router.push('/skill-map')}
+                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Full View</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
               </div>
 
-              <HeroCareerNetwork
-                onExploreOpportunities={() => router.push('/opportunities')}
-                onBuildProfile={() => setIsOnboardingOpen(true)}
+              <SkillMapVisual
+                student={student}
+                opportunities={opportunities}
+                matchResults={matchResults}
+                onChangeGoalClick={() => setIsGoalModalOpen(true)}
+                onOpportunityClick={(opp) => setSelectedOppForDetail({ opp })}
               />
             </div>
 
-            {/* 3. Career DNA Synthesis */}
+            {/* 6. Career DNA Synthesis */}
             <CareerDNAView
               student={student!}
-              onExploreGaps={() => router.push('/opportunities')}
+              onExploreGaps={() => router.push('/skill-map')}
               onSimulateWhatIf={() => router.push('/what-if')}
             />
 
-            {/* 4. Opportunity Radar & Match Grid */}
+            {/* 7. Comprehensive Opportunity Radar */}
             <OpportunityRadar
               student={student!}
               matchResults={matchResults}
@@ -300,7 +579,7 @@ export default function DashboardPage() {
               onViewDetails={(match) => {
                 setSelectedOppForDetail({ opp: match.opportunity, match });
               }}
-              onExploreGaps={() => router.push('/opportunities')}
+              onExploreGaps={() => router.push('/skill-map')}
               onSimulateWhatIf={() => router.push('/what-if')}
             />
           </div>
@@ -312,6 +591,14 @@ export default function DashboardPage() {
           />
         )}
       </main>
+
+      {/* Career Goal Modal */}
+      <CareerGoalModal
+        isOpen={isGoalModalOpen}
+        onClose={() => setIsGoalModalOpen(false)}
+        currentGoal={student?.careerGoal || 'Machine Learning Engineer'}
+        onUpdateGoal={handleUpdateGoal}
+      />
 
       {/* Modals */}
       {selectedOppForDetail && (

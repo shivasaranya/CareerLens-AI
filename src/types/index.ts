@@ -1,6 +1,7 @@
 export type OpportunityType = 
-  | 'Internship'
+  | 'Job'
   | 'Full-time'
+  | 'Internship'
   | 'Research'
   | 'Fellowship'
   | 'Scholarship'
@@ -162,16 +163,24 @@ export interface Opportunity {
   benefits?: string;
   prizes?: string;
   teamSize?: string;
+  responsibilities?: string[];
+  experienceLevel?: 'Fresher' | '0–1 years' | '1–2 years' | '2–5 years' | '5+ years';
+  employmentType?: 'Full-time' | 'Part-time' | 'Contract';
+  postedDate?: string;
+  freshnessStatus?: 'Recently Posted' | 'Active' | 'Deadline Approaching' | 'Expired';
+  eligibilityStatus?: 'Eligible' | 'Eligibility Issue' | 'Conditional';
   featured?: boolean;
 }
 
 export interface MatchBreakdown {
-  skillsScore: number; // 0 - 100
+  skillsScore: number; // 35% weight
+  eligibilityScore: number; // 25% weight
+  careerGoalScore?: number; // 20% weight
+  projectsScore: number; // 10% weight
+  preferencesScore?: number; // 10% weight
   educationScore: number;
-  projectsScore: number;
   experienceScore: number;
   careerInterestScore: number;
-  eligibilityScore: number;
 }
 
 export interface MatchResult {
@@ -186,11 +195,22 @@ export interface MatchResult {
   aiExplanation: string;
   whyNot100Explanation: string;
   fastestImprovementTip: string;
+  eligibilityIssue?: string | null;
+  readinessChecklist?: {
+    label: string;
+    passed: boolean;
+    note?: string;
+  }[];
 }
 
 export interface SkillGapItem {
   skill: string;
   category: 'Critical Gap' | 'Competitive Gap' | 'Future Gap';
+  priority?: 'Critical' | 'High Priority' | 'Moderate' | 'Future';
+  whyNeeded?: string;
+  currentLevel?: string;
+  targetLevel?: string;
+  recommendedAction?: string;
   description: string;
   relevanceCount: number;
   unlockPotentialCount: number;

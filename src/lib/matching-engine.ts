@@ -1,41 +1,92 @@
 import { Opportunity, StudentProfile, MatchResult, MatchBreakdown, MatchCategory } from '@/types';
 
-// Helper to normalize skill strings
-function normalizeSkill(s: string): string {
-  return s.trim().toLowerCase();
+// Canonical Skill Normalization Taxonomy
+const CANONICAL_SKILL_MAP: Record<string, string> = {
+  'python 3': 'Python',
+  'python programming': 'Python',
+  'py': 'Python',
+  'ml': 'Machine Learning',
+  'machine learning': 'Machine Learning',
+  'deep learning': 'Deep Learning',
+  'dl': 'Deep Learning',
+  'pytorch': 'PyTorch',
+  'tensorflow': 'TensorFlow',
+  'aws': 'AWS',
+  'amazon web services': 'AWS',
+  'gcp': 'Google Cloud',
+  'google cloud platform': 'Google Cloud',
+  'azure': 'Microsoft Azure',
+  'k8s': 'Kubernetes',
+  'docker': 'Docker',
+  'containerization': 'Docker',
+  'containers': 'Docker',
+  'ci/cd': 'CI/CD',
+  'continuous integration': 'CI/CD',
+  'sql': 'SQL',
+  'mysql': 'SQL',
+  'postgresql': 'SQL',
+  'postgres': 'SQL',
+  'react': 'React',
+  'reactjs': 'React',
+  'react.js': 'React',
+  'nextjs': 'Next.js',
+  'next.js': 'Next.js',
+  'ts': 'TypeScript',
+  'typescript': 'TypeScript',
+  'js': 'JavaScript',
+  'javascript': 'JavaScript',
+  'golang': 'Go',
+  'go': 'Go',
+  'c++': 'C++',
+  'cpp': 'C++',
+  'dsa': 'Data Structures & Algorithms',
+  'data structures': 'Data Structures & Algorithms',
+  'algorithms': 'Data Structures & Algorithms',
+  'data structures & algorithms': 'Data Structures & Algorithms',
+  'rest': 'REST APIs',
+  'restful apis': 'REST APIs',
+  'rest apis': 'REST APIs',
+  'cyber security': 'Cybersecurity',
+  'infosec': 'Cybersecurity',
+};
+
+function canonicalizeSkill(skill: string): string {
+  const norm = skill.trim().toLowerCase();
+  return CANONICAL_SKILL_MAP[norm] || skill.trim();
 }
 
 function findStudentSkill(reqSkill: string, studentSkills: StudentProfile['skills']): StudentProfile['skills'][0] | undefined {
-  const normReq = reqSkill.trim().toLowerCase();
-  
-  // 1. Exact match
-  const exact = studentSkills.find(s => s.name.trim().toLowerCase() === normReq);
+  const canonReq = canonicalizeSkill(reqSkill).toLowerCase();
+  const rawReq = reqSkill.trim().toLowerCase();
+
+  // 1. Exact or canonical match
+  const exact = studentSkills.find((s) => {
+    const sCanon = canonicalizeSkill(s.name).toLowerCase();
+    const sRaw = s.name.trim().toLowerCase();
+    return sCanon === canonReq || sRaw === rawReq || sCanon === rawReq || sRaw === canonReq;
+  });
   if (exact) return exact;
 
-  // 2. Keyword / Alias mapping
+  // 2. Semantic aliases
   const aliases: Record<string, string[]> = {
     'docker': ['containerization', 'containers', 'docker compose', 'devops', 'kubernetes'],
-    'containerization': ['docker', 'containers', 'docker compose'],
     'aws': ['cloud', 'amazon web services', 'cloud architecture', 'devops'],
     'kubernetes': ['k8s', 'cluster ops', 'container orchestration', 'docker'],
     'pytorch': ['deep learning', 'machine learning', 'neural networks', 'ai'],
     'deep learning': ['pytorch', 'neural networks', 'machine learning', 'tensorflow'],
     'machine learning': ['ai', 'deep learning', 'pytorch', 'data science', 'ml'],
-    'rest apis': ['apis', 'microservices', 'backend', 'rest'],
+    'rest apis': ['apis', 'microservices', 'backend', 'rest', 'endpoints'],
     'ci/cd': ['devops', 'pipelines', 'github actions', 'docker'],
+    'data structures & algorithms': ['dsa', 'algorithms', 'problem solving', 'competitive programming'],
   };
 
-  const matched = studentSkills.find(s => {
+  const matched = studentSkills.find((s) => {
     const sNorm = s.name.trim().toLowerCase();
-    if (sNorm === normReq) return true;
-    if (sNorm.includes(normReq) || normReq.includes(sNorm)) return true;
-    
-    // Check aliases
-    const reqAliases = aliases[normReq] || [];
-    if (reqAliases.some(a => sNorm.includes(a) || a.includes(sNorm))) return true;
+    const reqAliases = aliases[rawReq] || aliases[canonReq] || [];
+    if (reqAliases.some((a) => sNorm.includes(a) || a.includes(sNorm))) return true;
 
     const sAliases = aliases[sNorm] || [];
-    if (sAliases.some(a => normReq.includes(a) || a.includes(normReq))) return true;
+    if (sAliases.some((a) => rawReq.includes(a) || a.includes(rawReq))) return true;
 
     return false;
   });
@@ -44,190 +95,346 @@ function findStudentSkill(reqSkill: string, studentSkills: StudentProfile['skill
 }
 
 export function evaluateMatch(opportunity: Opportunity, student: StudentProfile): MatchResult {
-  // Layer 1: Structured Eligibility Checking
+  // If student profile has no skills or career goal, return unanalyzed state
+  const hasBasicProfile = Boolean(student && student.name && student.name.trim().length > 0);
+  if (!hasBasicProfile) {
+    return {
+      opportunity,
+      overallMatchScore: 0,
+      potentialMatchScore: 0,
+      category: 'Future',
+      breakdown: {
+        skillsScore: 0,
+        eligibilityScore: 0,
+        careerGoalScore: 0,
+        projectsScore: 0,
+        preferencesScore: 0,
+        educationScore: 0,
+        experienceScore: 0,
+        careerInterestScore: 0,
+      },
+      matchedSkills: [],
+      partialSkills: [],
+      missingSkills: opportunity.requiredSkills,
+      aiExplanation: 'Create your profile to see your personalized AI-estimated match.',
+      whyNot100Explanation: 'Profile not yet created.',
+      fastestImprovementTip: 'Complete your profile with education, career goal, and verified skills.',
+      eligibilityIssue: null,
+      readinessChecklist: [],
+    };
+  }
+
+  // ==========================================
+  // 1. HARD & SOFT ELIGIBILITY CHECKING (25%)
+  // ==========================================
   let eligibilityScore = 100;
-  const matchesGradYear = opportunity.eligibleGradYears.length === 0 || opportunity.eligibleGradYears.includes(student.graduationYear);
+  let eligibilityIssue: string | null = null;
+
+  // A. Graduation Year check
+  const matchesGradYear =
+    opportunity.eligibleGradYears.length === 0 ||
+    opportunity.eligibleGradYears.includes(student.graduationYear);
+
+  if (!matchesGradYear) {
+    eligibilityScore -= 35;
+    eligibilityIssue = `Graduation Year: Target cohorts are ${opportunity.eligibleGradYears.join(', ')} (Profile specifies ${student.graduationYear})`;
+  }
+
+  // B. Branch check
   const matchesBranch = opportunity.eligibleBranches.some(
-    (b) => b.toLowerCase().includes('all') || student.branch.toLowerCase().includes(b.toLowerCase()) || b.toLowerCase().includes(student.branch.toLowerCase())
+    (b) =>
+      b.toLowerCase().includes('all') ||
+      student.branch.toLowerCase().includes(b.toLowerCase()) ||
+      b.toLowerCase().includes(student.branch.toLowerCase())
   );
 
-  if (!matchesGradYear) eligibilityScore -= 40;
-  if (!matchesBranch) eligibilityScore -= 30;
-  eligibilityScore = Math.max(20, eligibilityScore);
+  if (!matchesBranch) {
+    eligibilityScore -= 25;
+    if (!eligibilityIssue) {
+      eligibilityIssue = `Branch criteria: Requires degrees in ${opportunity.eligibleBranches.slice(0, 2).join(', ')}`;
+    }
+  }
 
-  // Layer 2 & 3: Skills Scoring
+  // C. Experience level check (Hard criteria)
+  const expLevel = opportunity.experienceLevel || 'Fresher';
+  const studentExpYears = student.experience.length; // rough estimate based on entry count
+  if ((expLevel === '2–5 years' || expLevel === '5+ years') && studentExpYears === 0) {
+    eligibilityScore -= 45;
+    eligibilityIssue = `Experience Requirement: Role requires ${expLevel} professional experience; profile is currently entry-level/fresher.`;
+  }
+
+  eligibilityScore = Math.max(15, Math.min(100, eligibilityScore));
+
+  // ==========================================
+  // 2. SKILL MATCHING (35%)
+  // ==========================================
   const matchedSkills: string[] = [];
   const partialSkills: { skill: string; reason: string }[] = [];
   const missingSkills: string[] = [];
 
   let requiredSkillPoints = 0;
-  let totalRequiredSkills = opportunity.requiredSkills.length || 1;
+  const totalRequiredSkills = opportunity.requiredSkills.length || 1;
 
   opportunity.requiredSkills.forEach((reqSkill) => {
     const found = findStudentSkill(reqSkill, student.skills);
 
     if (found) {
+      const hasEvidence = Boolean(found.evidence && found.evidence.length > 0);
       if (found.level === 'Advanced' || found.confidenceScore >= 80) {
         matchedSkills.push(reqSkill);
-        requiredSkillPoints += 1.0;
+        requiredSkillPoints += hasEvidence ? 1.0 : 0.95;
       } else if (found.level === 'Intermediate' || found.confidenceScore >= 60) {
         matchedSkills.push(reqSkill);
-        requiredSkillPoints += 0.85;
+        requiredSkillPoints += hasEvidence ? 0.85 : 0.75;
       } else {
-        partialSkills.push({ skill: reqSkill, reason: `Basic knowledge (${found.confidenceScore}% confidence)` });
+        partialSkills.push({
+          skill: reqSkill,
+          reason: `Beginner proficiency (${found.confidenceScore}% confidence)${hasEvidence ? ' with evidence' : ''}`,
+        });
         requiredSkillPoints += 0.5;
       }
     } else {
       // Check partial match in project tech stack
-      const norm = normalizeSkill(reqSkill);
+      const norm = reqSkill.toLowerCase();
       const inProject = student.projects.some((p) =>
-        p.techStack.some((ts) => normalizeSkill(ts) === norm || norm.includes(normalizeSkill(ts)) || normalizeSkill(ts).includes(norm))
+        p.techStack.some((ts) => ts.toLowerCase() === norm || norm.includes(ts.toLowerCase()) || ts.toLowerCase().includes(norm))
       );
       if (inProject) {
-        partialSkills.push({ skill: reqSkill, reason: 'Used in project but not formally declared as verified core skill' });
-        requiredSkillPoints += 0.6;
+        partialSkills.push({ skill: reqSkill, reason: 'Applied in project portfolio, but not formally added to verified skill inventory' });
+        requiredSkillPoints += 0.55;
       } else {
         missingSkills.push(reqSkill);
       }
     }
   });
 
-  // Check preferred skills bonus
+  // Preferred skills bonus (up to 10 extra points)
   let preferredBonus = 0;
   opportunity.preferredSkills.forEach((prefSkill) => {
     const found = findStudentSkill(prefSkill, student.skills);
     if (found) {
       matchedSkills.push(`${prefSkill} (Bonus)`);
-      preferredBonus += 4;
-    } else {
-      // If not present, note in missing preferred skills
-      if (!missingSkills.includes(prefSkill)) {
-        missingSkills.push(prefSkill);
-      }
+      preferredBonus += 3.5;
+    } else if (!missingSkills.includes(prefSkill)) {
+      missingSkills.push(prefSkill);
     }
   });
 
-  const baseSkillScore = Math.min(100, Math.round((requiredSkillPoints / totalRequiredSkills) * 90 + preferredBonus));
+  const skillsScore = Math.min(100, Math.round((requiredSkillPoints / totalRequiredSkills) * 92 + preferredBonus));
 
-  // Projects relevance calculation
-  let projectsScore = 50;
-  const projectTechCombined = student.projects.flatMap((p) => p.techStack.map(normalizeSkill));
-  const relevantProjectCount = student.projects.filter((p) =>
-    p.techStack.some((ts) =>
-      opportunity.requiredSkills.some((rs) => normalizeSkill(rs) === normalizeSkill(ts)) ||
-      opportunity.preferredSkills.some((ps) => normalizeSkill(ps) === normalizeSkill(ts))
-    )
-  ).length;
-
-  if (relevantProjectCount >= 2) projectsScore = 94;
-  else if (relevantProjectCount === 1) projectsScore = 78;
-  else projectsScore = 40;
-
-  // Experience relevance
-  let experienceScore = 70;
-  if (student.experience.length > 0) {
-    const relevantExp = student.experience.some((exp) =>
-      opportunity.requiredSkills.some((rs) => (exp.description || '').toLowerCase().includes(rs.toLowerCase()))
-    );
-    experienceScore = relevantExp ? 85 : 72;
-  } else {
-    experienceScore = 50;
-  }
-
-  // Career Interest & Goal Alignment
-  let careerInterestScore = 60;
-  const goalLower = student.careerGoal.toLowerCase();
+  // ==========================================
+  // 3. CAREER GOAL ALIGNMENT (20%)
+  // ==========================================
+  let careerGoalScore = 55;
+  const goalLower = (student.careerGoal || '').toLowerCase().trim();
   const titleLower = opportunity.title.toLowerCase();
   const descLower = opportunity.description.toLowerCase();
+  const orgLower = opportunity.organization.toLowerCase();
 
-  const matchesDirectGoal =
-    goalLower.includes('software') && titleLower.includes('software') ||
-    goalLower.includes('backend') && (titleLower.includes('backend') || descLower.includes('backend')) ||
-    goalLower.includes('ai') && (titleLower.includes('ai') || titleLower.includes('machine learning')) ||
-    goalLower.includes('data') && (titleLower.includes('data') || titleLower.includes('analytics'));
+  if (goalLower) {
+    // Goal dictionary & keywords
+    const goalKeywords: Record<string, string[]> = {
+      'machine learning engineer': ['machine learning', 'ml', 'ai', 'deep learning', 'pytorch', 'model', 'neural', 'vision', 'nlp'],
+      'ai/ml engineer': ['machine learning', 'ml', 'ai', 'deep learning', 'pytorch', 'model', 'copilot', 'llm'],
+      'ai engineer': ['ai', 'artificial intelligence', 'machine learning', 'llm', 'deep learning', 'copilot', 'openai'],
+      'cloud engineer': ['cloud', 'aws', 'azure', 'devops', 'kubernetes', 'docker', 'infrastructure', 'sre', 'linux'],
+      'devops engineer': ['devops', 'ci/cd', 'kubernetes', 'docker', 'infrastructure', 'cloud', 'sre', 'terraform', 'linux'],
+      'software engineer': ['software engineer', 'software development', 'swe', 'backend', 'full stack', 'algorithms', 'developer', 'distributed'],
+      'backend engineer': ['backend', 'distributed systems', 'api', 'go', 'java', 'sql', 'microservices', 'database', 'server'],
+      'frontend developer': ['frontend', 'react', 'ui', 'ux', 'web', 'javascript', 'typescript', 'nextjs', 'css'],
+      'data scientist': ['data science', 'data scientist', 'statistics', 'analytics', 'python', 'machine learning', 'data analysis'],
+      'data analyst': ['data analyst', 'analytics', 'sql', 'bi', 'tableau', 'data analysis', 'visualization'],
+      'cybersecurity engineer': ['cybersecurity', 'security', 'network', 'firewall', 'threat', 'infosec', 'wireshark', 'defense'],
+      'researcher': ['research', 'laboratory', 'paper', 'academic', 'cern', 'fellowship', 'investigation', 'residency'],
+    };
 
-  const interestMatchCount = student.careerInterests.filter((interest) =>
-    titleLower.includes(interest.toLowerCase()) || descLower.includes(interest.toLowerCase())
-  ).length;
+    let matchedKeywords = 0;
+    const targetKeywords = goalKeywords[goalLower] || [goalLower];
 
-  if (matchesDirectGoal && interestMatchCount >= 2) careerInterestScore = 96;
-  else if (matchesDirectGoal || interestMatchCount >= 1) careerInterestScore = 84;
-  else careerInterestScore = 65;
+    targetKeywords.forEach((kw) => {
+      if (titleLower.includes(kw) || descLower.includes(kw) || orgLower.includes(kw)) {
+        matchedKeywords++;
+      }
+    });
 
-  const educationScore = matchesGradYear && matchesBranch ? 100 : 75;
+    if (titleLower.includes(goalLower) || (goalLower.includes('cloud') && (titleLower.includes('cloud') || titleLower.includes('devops')))) {
+      careerGoalScore = 98;
+    } else if (matchedKeywords >= 3) {
+      careerGoalScore = 92;
+    } else if (matchedKeywords >= 2) {
+      careerGoalScore = 80;
+    } else if (matchedKeywords === 1) {
+      careerGoalScore = 65;
+    } else {
+      careerGoalScore = 40; // Divergent goal
+    }
+  }
 
-  // Layer 3: Weighted overall match score
-  // Weights: Skills 40%, Projects 20%, Career Interest 15%, Education/Eligibility 15%, Experience 10%
-  const weightedScore = Math.round(
-    baseSkillScore * 0.40 +
-    projectsScore * 0.20 +
-    careerInterestScore * 0.15 +
-    educationScore * 0.15 +
-    experienceScore * 0.10
+  // ==========================================
+  // 4. PROJECT & EVIDENCE RELEVANCE (10%)
+  // ==========================================
+  let projectsScore = 45;
+  const relevantProjects = student.projects.filter((p) =>
+    p.techStack.some((ts) =>
+      opportunity.requiredSkills.some((rs) => rs.toLowerCase().includes(ts.toLowerCase()) || ts.toLowerCase().includes(rs.toLowerCase())) ||
+      opportunity.preferredSkills.some((ps) => ps.toLowerCase().includes(ts.toLowerCase()) || ts.toLowerCase().includes(ps.toLowerCase()))
+    )
   );
 
-  const overallMatchScore = Math.min(97, Math.max(25, weightedScore));
+  const certificatesCount = student.certifications.length;
+  const hasGitHubEvidence = student.skills.some((s) => s.evidence.some((e) => e.type === 'GitHub' || e.type === 'Project'));
 
-  // Potential Match: If missing skills are learned (targeted prep)
-  const potentialBoost = Math.min(22, missingSkills.length * 7 + (100 - baseSkillScore) * 0.35);
+  if (relevantProjects.length >= 2 || (relevantProjects.length >= 1 && certificatesCount >= 1)) {
+    projectsScore = 95;
+  } else if (relevantProjects.length === 1 || hasGitHubEvidence) {
+    projectsScore = 80;
+  } else if (student.projects.length > 0) {
+    projectsScore = 60;
+  } else {
+    projectsScore = 30;
+  }
+
+  // ==========================================
+  // 5. PREFERENCES ALIGNMENT (10%)
+  // ==========================================
+  let preferencesScore = 75;
+  const pref = student.preferences;
+  if (pref) {
+    let modeMatch = true;
+    if (pref.workPreference && pref.workPreference !== 'Any') {
+      modeMatch = opportunity.workMode === pref.workPreference || opportunity.workMode === 'Any';
+    }
+
+    let typeMatch = true;
+    if (pref.types && pref.types.length > 0) {
+      typeMatch = pref.types.some(
+        (t) =>
+          t.toLowerCase() === opportunity.type.toLowerCase() ||
+          (t === 'Full-time' && opportunity.type === 'Job') ||
+          (t === 'Job' && opportunity.type === 'Full-time')
+      );
+    }
+
+    if (modeMatch && typeMatch) preferencesScore = 98;
+    else if (modeMatch || typeMatch) preferencesScore = 75;
+    else preferencesScore = 50;
+  }
+
+  // ==========================================
+  // TRANSPARENT WEIGHTED SCORING
+  // Skill: 35% | Eligibility: 25% | Goal: 20% | Project/Evidence: 10% | Prefs: 10%
+  // ==========================================
+  const rawWeightedScore =
+    skillsScore * 0.35 +
+    eligibilityScore * 0.25 +
+    careerGoalScore * 0.20 +
+    projectsScore * 0.10 +
+    preferencesScore * 0.10;
+
+  let overallMatchScore = Math.min(97, Math.max(20, Math.round(rawWeightedScore)));
+
+  // If there is an explicit hard eligibility issue, cap the score so it never claims "Strong Match"
+  if (eligibilityIssue && overallMatchScore > 72) {
+    overallMatchScore = 70;
+  }
+
+  // Potential Match: If missing skills are mastered
+  const potentialBoost = Math.min(22, missingSkills.length * 6 + (100 - skillsScore) * 0.3);
   const potentialMatchScore = Math.min(98, Math.round(overallMatchScore + potentialBoost));
 
   // Category determination
   let category: MatchCategory = 'Future';
-  if (overallMatchScore >= 85 && opportunity.daysRemaining <= 6) {
+  if (overallMatchScore >= 84 && !eligibilityIssue && opportunity.daysRemaining <= 7) {
     category = 'Apply Now';
-  } else if (overallMatchScore >= 78) {
+  } else if (overallMatchScore >= 78 && !eligibilityIssue) {
     category = 'Strong Match';
-  } else if (overallMatchScore >= 58 || potentialMatchScore >= 80) {
+  } else if (overallMatchScore >= 56 || potentialMatchScore >= 78) {
     category = 'Near-Fit';
   } else {
     category = 'Future';
   }
 
   const breakdown: MatchBreakdown = {
-    skillsScore: baseSkillScore,
-    educationScore,
-    projectsScore,
-    experienceScore,
-    careerInterestScore,
+    skillsScore,
     eligibilityScore,
+    careerGoalScore,
+    projectsScore,
+    preferencesScore,
+    educationScore: eligibilityScore,
+    experienceScore: projectsScore,
+    careerInterestScore: careerGoalScore,
   };
 
-  // Layer 4: Explainability Generation
+  // Readiness Checklist
+  const readinessChecklist = [
+    {
+      label: 'Eligibility & Graduation Criteria',
+      passed: !eligibilityIssue,
+      note: eligibilityIssue || `Matches ${opportunity.eligibleGradYears.join(', ')} graduation cohorts and degree requirements.`,
+    },
+    {
+      label: 'Core Skills Qualification',
+      passed: skillsScore >= 65,
+      note: `${matchedSkills.length} of ${opportunity.requiredSkills.length} core prerequisites demonstrated.`,
+    },
+    {
+      label: 'Career Goal Alignment',
+      passed: careerGoalScore >= 70,
+      note: student.careerGoal
+        ? `Targeting ${student.careerGoal}; aligns with role focus.`
+        : 'Set a specific career goal to sharpen recommendation priority.',
+    },
+    {
+      label: 'Verified Project Evidence',
+      passed: relevantProjects.length > 0,
+      note: relevantProjects.length > 0
+        ? `${relevantProjects.length} relevant technical project(s) demonstrated.`
+        : 'Adding a project in this tech stack will strengthen candidate readiness.',
+    },
+    {
+      label: 'Active Application Deadline',
+      passed: opportunity.daysRemaining > 0,
+      note: `${opportunity.daysRemaining} days remaining until ${opportunity.deadline}.`,
+    },
+  ];
+
+  // Explainability
   const strongHighlights = matchedSkills.slice(0, 3).join(', ');
   const primaryGaps = missingSkills.slice(0, 2).join(' and ');
 
   let aiExplanation = '';
-  if (overallMatchScore >= 80) {
-    aiExplanation = `You are a strong candidate because your technical background in ${strongHighlights} and your verified project portfolio align closely with the role requirements. ${
-      primaryGaps ? `Your primary gap to become an exceptional candidate is ${primaryGaps}.` : 'Your background covers virtually all prerequisites.'
+  if (overallMatchScore >= 80 && !eligibilityIssue) {
+    aiExplanation = `You have strong candidate alignment because your demonstrated skills in ${strongHighlights || 'core areas'} directly match role specifications, and your career goal (${student.careerGoal || 'Software'}) is closely aligned. ${
+      primaryGaps ? `Your recommended area of focus is ${primaryGaps}.` : 'Your profile satisfies primary prerequisites.'
     }`;
+  } else if (eligibilityIssue) {
+    aiExplanation = `While your technical foundations in ${strongHighlights || 'key technologies'} are relevant, there is a formal criteria consideration: ${eligibilityIssue}`;
   } else if (overallMatchScore >= 60) {
-    aiExplanation = `You possess solid foundational competencies in ${strongHighlights}. However, the position prioritizes hands-on evidence in ${primaryGaps || 'specialized domain tools'}. With targeted preparation, you can bridge this gap.`;
+    aiExplanation = `You possess solid foundational competencies in ${strongHighlights || 'core programming'}. However, this role prioritizes demonstrated depth in ${primaryGaps || 'specialized tools'}.`;
   } else {
-    aiExplanation = `This opportunity requires specialized proficiencies in ${missingSkills.slice(0, 3).join(', ')} which are not yet established on your profile. We recommend focusing on prerequisite competencies first.`;
+    aiExplanation = `This opportunity requires specialized proficiencies in ${missingSkills.slice(0, 3).join(', ')} which are not yet established on your profile.`;
   }
 
   // Why not 100% calculation
   const gapReasons: string[] = [];
+  if (eligibilityIssue) {
+    gapReasons.push(eligibilityIssue);
+  }
   if (missingSkills.length > 0) {
-    gapReasons.push(`Missing declared or verified proficiency in ${missingSkills.slice(0, 3).join(', ')}.`);
+    gapReasons.push(`Prerequisite or preferred skills not yet demonstrated: ${missingSkills.slice(0, 3).join(', ')}.`);
   }
-  if (projectsScore < 90) {
-    gapReasons.push('Your portfolio does not yet demonstrate a dedicated production project specifically tailored to this company’s stack.');
-  }
-  if (experienceScore < 85) {
-    gapReasons.push('Limited prior formal industry work history in this exact domain.');
+  if (projectsScore < 85) {
+    gapReasons.push('Your portfolio does not yet include a verified project specifically built with this enterprise tech stack.');
   }
   if (gapReasons.length === 0) {
-    gapReasons.push('No profile achieves 100% because candidate competitiveness also depends on applicant pool dynamics and domain interviews.');
+    gapReasons.push('No candidate profile achieves 100% because selection also depends on live technical rounds and applicant pool dynamics.');
   }
 
-  const whyNot100Explanation = `You are ${overallMatchScore}% matched. The remaining gap of ${100 - overallMatchScore}% comes primarily from: ${gapReasons.join(' ')}`;
+  const whyNot100Explanation = `You are ${overallMatchScore}% matched (AI-estimated match). The gap comes from: ${gapReasons.join(' ')}`;
 
   const fastestImprovementTip = missingSkills.length > 0
-    ? `Learning ${missingSkills[0]} and completing one public GitHub implementation could raise your match by +${Math.min(18, Math.round(potentialBoost))}%.`
-    : 'Deploying one of your existing backend projects with live monitoring will solidify your readiness.';
+    ? `Building one hands-on project demonstrating ${missingSkills[0]} could raise your estimated match by +${Math.min(18, Math.round(potentialBoost))}%.`
+    : 'Documenting code architecture and adding a live deployed URL will strengthen candidate readiness.';
 
   return {
     opportunity,
@@ -241,6 +448,8 @@ export function evaluateMatch(opportunity: Opportunity, student: StudentProfile)
     aiExplanation,
     whyNot100Explanation,
     fastestImprovementTip,
+    eligibilityIssue,
+    readinessChecklist,
   };
 }
 

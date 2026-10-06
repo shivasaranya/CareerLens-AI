@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { EmptyDashboard } from '@/components/EmptyDashboard';
 import { OnboardingModal } from '@/components/OnboardingModal';
+import { CareerGoalModal } from '@/components/CareerGoalModal';
 import { AuthModal } from '@/components/AuthModal';
 import { StudentProfile, AuthUser } from '@/types';
 import { 
@@ -23,7 +24,8 @@ import {
   Award, 
   Sparkles, 
   Briefcase,
-  Edit2
+  Edit2,
+  Target
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -33,6 +35,7 @@ export default function ProfilePage() {
   const [currentUser, setCurrentUserState] = useState<AuthUser | null>(null);
   const [isClient, setIsClient] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -70,6 +73,18 @@ export default function ProfilePage() {
     showToast(`Profile updated for ${newProfile.name}!`);
   };
 
+  const handleUpdateGoal = (newGoal: string) => {
+    if (!student || !currentUser) return;
+    const updated: StudentProfile = {
+      ...student,
+      careerGoal: newGoal,
+      updatedAt: new Date().toISOString(),
+    };
+    setStudent(updated);
+    saveUserProfile(currentUser.id, updated);
+    showToast(`Career Goal updated to ${newGoal}!`);
+  };
+
   const handleSignOut = () => {
     signOut();
     setCurrentUserState(null);
@@ -95,6 +110,8 @@ export default function ProfilePage() {
         setActiveTab={(tab) => {
           if (tab === 'landing') router.push('/');
           else if (tab === 'opportunities') router.push('/opportunities');
+          else if (tab === 'jobs') router.push('/jobs');
+          else if (tab === 'skill-map') router.push('/skill-map');
           else if (tab === 'dashboard') router.push('/dashboard');
           else if (tab === 'what-if') router.push('/what-if');
         }}
@@ -178,15 +195,32 @@ export default function ProfilePage() {
 
               {/* Career Goal */}
               <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-3">
-                <div className="flex items-center space-x-2 text-indigo-700 font-bold text-xs uppercase tracking-wider">
-                  <Sparkles className="w-4 h-4 text-amber-500" />
-                  <span>Career Goal & Interests</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2 text-indigo-700 font-bold text-xs uppercase tracking-wider">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    <span>Career Goal & Trajectory</span>
+                  </div>
+                  <button
+                    onClick={() => setIsGoalModalOpen(true)}
+                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                    <span>Change Goal</span>
+                  </button>
                 </div>
-                <div className="p-4 rounded-xl bg-indigo-50/50 border border-indigo-100">
-                  <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Target Role</div>
-                  <p className="text-sm font-bold text-indigo-950">
-                    {student!.careerGoal || 'Not specified'}
-                  </p>
+                <div className="p-4 rounded-xl bg-indigo-50/50 border border-indigo-100 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Active Career Destination</div>
+                    <p className="text-sm font-black text-indigo-950">
+                      {student!.careerGoal || 'Not specified'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsGoalModalOpen(true)}
+                    className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs cursor-pointer"
+                  >
+                    Change
+                  </button>
                 </div>
                 <div>
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Domains of Interest</span>
@@ -283,6 +317,14 @@ export default function ProfilePage() {
         onSaveProfile={handleSaveProfile}
         initialProfile={student}
         currentUser={currentUser}
+      />
+
+      {/* Career Goal Modal */}
+      <CareerGoalModal
+        isOpen={isGoalModalOpen}
+        onClose={() => setIsGoalModalOpen(false)}
+        currentGoal={student?.careerGoal || 'Machine Learning Engineer'}
+        onUpdateGoal={handleUpdateGoal}
       />
 
       <AuthModal
