@@ -13,356 +13,457 @@ import {
   CheckCircle2, 
   ArrowRight,
   BookmarkCheck,
-  FileCheck2
+  FileCheck2,
+  Lock,
+  Clock,
+  Award,
+  Layers,
+  Check,
+  Info
 } from 'lucide-react';
-import { MatchResult, StudentProfile } from '@/types';
+import { MatchResult, Opportunity, StudentProfile } from '@/types';
 
 interface OpportunityDetailModalProps {
-  matchResult: MatchResult | null;
-  student: StudentProfile;
+  opportunity: Opportunity | null;
+  matchResult?: MatchResult | null;
+  student: StudentProfile | null;
   onClose: () => void;
-  onOpenRoadmap: (match: MatchResult) => void;
-  onTrackApplication: (oppId: string, title: string, org: string) => void;
+  onOpenRoadmap?: (match: MatchResult) => void;
+  onTrackApplication?: (oppId: string, title: string, org: string) => void;
+  onBuildProfile?: () => void;
   isAlreadyTracked?: boolean;
 }
 
 export const OpportunityDetailModal: React.FC<OpportunityDetailModalProps> = ({
+  opportunity,
   matchResult,
   student,
   onClose,
   onOpenRoadmap,
   onTrackApplication,
+  onBuildProfile,
   isAlreadyTracked = false,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'readiness' | 'ai-qa'>('overview');
-  const [selectedAiQuestion, setSelectedAiQuestion] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'match' | 'organization'>('overview');
 
-  if (!matchResult) return null;
+  if (!opportunity) return null;
 
-  const { opportunity, overallMatchScore, potentialMatchScore, category, matchedSkills } = matchResult;
-  const isHighRisk = opportunity.verification.status === 'High Risk';
+  const hasProfile = Boolean(student && student.name && student.name.trim().length > 0);
+  const isHighRisk = opportunity.verification?.status === 'High Risk';
+  const score = matchResult ? matchResult.overallMatchScore : null;
 
-  const aiQuestionsMap: Record<string, string> = {
-    'Why is this relevant to me?': `Based on your profile, you have verified depth in ${student.skills.slice(0, 3).map(s => s.name).join(', ')}. ABC Technologies builds high-throughput backend services handling 10M+ events, which directly aligns with your Distributed Stream Analyzer project (15,000 events/sec) and your career goal of becoming a Backend Systems Engineer.`,
-    'What should I learn first?': `Prioritize Docker containerization. ABC Technologies’ microservices infrastructure relies on containerized runtimes. Creating a Dockerfile and docker-compose manifest for your existing campus delivery microservice will take ~4 days and eliminate your primary qualification gap.`,
-    'Which of my projects should I mention in my application?': `Highlight your "Distributed Log Pipeline & Stream Analyzer" in Python asyncio & Redis. It directly proves your ability to build asynchronous, high-volume data streams, which matches the core requirements described in the job posting.`,
-  };
+  const missingSkillsCount = matchResult?.missingSkills?.length || 0;
+  const prepGapTier = missingSkillsCount <= 1 ? 'Small' : missingSkillsCount <= 3 ? 'Medium' : 'Significant';
+  const prepGapColor = missingSkillsCount <= 1 ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : missingSkillsCount <= 3 ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-slate-700 bg-slate-100 border-slate-200';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs overflow-y-auto">
-      <div className="relative w-full max-w-3xl bg-white border border-[#E6EAF2] rounded-2xl shadow-2xl p-6 sm:p-8 my-8 text-[#172033] max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/50 backdrop-blur-xs overflow-y-auto">
+      <div className="relative w-full max-w-3xl bg-white border border-slate-200 rounded-3xl shadow-2xl p-6 sm:p-8 my-auto text-[#172033] max-h-[92vh] overflow-y-auto flex flex-col">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+          className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 p-1.5 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Header Strip */}
-        <div className="space-y-3 pb-6 border-b border-[#E6EAF2]">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-3 pb-6 border-b border-slate-100">
+          <div className="flex flex-wrap items-center justify-between gap-3 pr-8">
             <div className="flex items-center space-x-2">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
-                {category}
-              </span>
-              <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+              <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
                 {opportunity.type}
               </span>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <div className="px-3 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono font-bold text-sm shadow-2xs">
-                {overallMatchScore}% MATCH
-              </div>
-              {potentialMatchScore > overallMatchScore && (
-                <div className="px-2.5 py-1 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 font-mono text-xs font-semibold">
-                  Potential: {potentialMatchScore}%
-                </div>
+              <span className="px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">
+                {opportunity.workMode}
+              </span>
+              {opportunity.verification?.status === 'Verified' ? (
+                <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Verified Source</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Needs Verification</span>
+                </span>
               )}
             </div>
-          </div>
 
-          <h2 className="text-xl sm:text-2xl font-extrabold text-[#172033] tracking-tight">
-            {opportunity.title}
-          </h2>
-
-          <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-slate-600 font-medium">
-            <span className="flex items-center gap-1.5 text-slate-800">
-              <Building2 className="w-4 h-4 text-slate-400" />
-              <span>{opportunity.organization}</span>
-            </span>
-            <span className="flex items-center gap-1.5 text-slate-500">
-              <MapPin className="w-4 h-4" />
-              <span>{opportunity.location} ({opportunity.workMode})</span>
-            </span>
-            <span className="flex items-center gap-1.5 text-slate-500 font-mono font-semibold">
-              <Calendar className="w-4 h-4 text-amber-600" />
-              <span>Deadline: {opportunity.daysRemaining} days remaining</span>
-            </span>
-            {opportunity.stipendOrSalary && (
-              <span className="text-emerald-700 font-mono font-bold">
-                {opportunity.stipendOrSalary}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Tab Strip */}
-        <div className="flex items-center space-x-2 my-5 border-b border-[#E6EAF2] pb-2">
-          {[
-            { id: 'overview', label: 'Overview & Requirements' },
-            { id: 'readiness', label: 'Application Readiness' },
-            { id: 'ai-qa', label: 'Ask AI About This Match' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                activeTab === tab.id
-                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* TAB 1: OVERVIEW & REQUIREMENTS */}
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
-            {/* Description */}
-            <div className="space-y-1.5">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Opportunity Overview
-              </h4>
-              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
-                {opportunity.description}
-              </p>
-            </div>
-
-            {/* Eligibility */}
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Eligibility & Academic Criteria
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-700">
-                <div>
-                  <span className="text-slate-500">Graduation Years: </span>
-                  <span className="font-semibold text-slate-900">
-                    {opportunity.eligibleGradYears.join(', ')}
-                  </span>
+            {hasProfile && matchResult && (
+              <div className="flex items-center space-x-2">
+                <div className="px-3 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono font-bold text-sm shadow-2xs">
+                  {score}% MATCH
                 </div>
-                <div>
-                  <span className="text-slate-500">Target Branches: </span>
-                  <span className="font-semibold text-slate-900">
-                    {opportunity.eligibleBranches.join(', ')}
-                  </span>
-                </div>
-                {opportunity.minGpaOrCriteria && (
-                  <div className="sm:col-span-2">
-                    <span className="text-slate-500">Criteria: </span>
-                    <span className="font-semibold text-slate-900">{opportunity.minGpaOrCriteria}</span>
+                {matchResult.potentialMatchScore > score! && (
+                  <div className="px-2.5 py-1 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 font-mono text-xs font-semibold">
+                    Potential: {matchResult.potentialMatchScore}%
                   </div>
                 )}
               </div>
-            </div>
-
-            {/* Required & Preferred Skills */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-indigo-700">
-                  Required Competencies
-                </span>
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {opportunity.requiredSkills.map((req, i) => {
-                    const hasSkill = matchedSkills.includes(req);
-                    return (
-                      <span
-                        key={i}
-                        className={`px-2.5 py-0.5 rounded text-xs font-mono font-semibold border ${
-                          hasSkill
-                            ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                            : 'bg-rose-50 border-rose-200 text-rose-800'
-                        }`}
-                      >
-                        {hasSkill ? '✓' : '✗'} {req}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-blue-700">
-                  Preferred / Bonus Stack
-                </span>
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {opportunity.preferredSkills.map((pref, i) => (
-                    <span
-                      key={i}
-                      className="px-2.5 py-0.5 rounded text-xs font-mono font-medium bg-white border border-slate-200 text-slate-700"
-                    >
-                      {pref}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Trust & Safety Shield Audit */}
-            <div className={`p-4 rounded-xl border space-y-2 ${
-              isHighRisk 
-                ? 'bg-red-50 border-red-200 text-red-800' 
-                : 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 font-bold text-xs uppercase tracking-wider">
-                  {isHighRisk ? <AlertTriangle className="w-4 h-4 text-red-600" /> : <ShieldCheck className="w-4 h-4 text-emerald-600" />}
-                  <span>Verification & Safety Shield Audit (Score: {opportunity.verification.trustScore}/100)</span>
-                </div>
-                <span className="text-xs font-bold px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-700">
-                  {opportunity.verification.status}
-                </span>
-              </div>
-              <p className="text-xs text-slate-700 leading-relaxed">
-                {opportunity.verification.notes}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 2: APPLICATION READINESS */}
-        {activeTab === 'readiness' && (
-          <div className="space-y-6">
-            <div className="p-4 bg-indigo-50/60 border border-indigo-200 rounded-xl space-y-1.5">
-              <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-indigo-800">
-                <FileCheck2 className="w-4 h-4 text-indigo-600" />
-                <span>AI Application Readiness Checklist</span>
-              </div>
-              <p className="text-xs text-slate-600">
-                Run through this pre-flight audit before clicking apply to maximize interview callback rates.
-              </p>
-            </div>
-
-            <div className="space-y-2.5">
-              {[
-                { label: 'Eligibility Verified', detail: 'Branch (CSE) & Grad Year (2026) verified matching opportunity specs.', passed: true },
-                { label: 'Relevant Project Aligned', detail: 'Distributed Stream Analyzer is ready to link on resume header.', passed: true },
-                { label: 'Core Skills Covered', detail: 'Python, SQL, REST APIs meet the primary required thresholds.', passed: true },
-                { label: 'Deadline Freshness', detail: `${opportunity.daysRemaining} days remaining; active direct ATS link.`, passed: true },
-                { label: 'Source Verification', detail: isHighRisk ? 'Flagged suspicious source; DO NOT apply.' : 'Verified direct ATS Greenhouse URL.', passed: !isHighRisk },
-              ].map((chk, i) => (
-                <div key={i} className="p-3.5 bg-slate-50 border border-slate-200/90 rounded-xl flex items-center justify-between shadow-2xs">
-                  <div className="space-y-0.5">
-                    <span className="text-xs font-bold text-slate-900">{chk.label}</span>
-                    <p className="text-[11px] text-slate-500">{chk.detail}</p>
-                  </div>
-                  {chk.passed ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  ) : (
-                    <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs text-slate-700">
-              <h5 className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">
-                Application Strategy Recommendations:
-              </h5>
-              <ul className="list-disc pl-4 space-y-1 text-slate-600">
-                <li>Emphasize your 15,000 req/sec benchmark in your summary.</li>
-                <li>Be transparent about Docker: Mention you are currently containerizing microservices in your active sprint.</li>
-                <li>Link your public GitHub repository with comprehensive README instructions.</li>
-              </ul>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: CONTEXTUAL AI Q&A */}
-        {activeTab === 'ai-qa' && (
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Select a Question to Ask CareerLens AI:
-              </span>
-              <div className="flex flex-col gap-2">
-                {[
-                  'Why is this relevant to me?',
-                  'What should I learn first?',
-                  'Which of my projects should I mention in my application?',
-                ].map((q) => (
-                  <button
-                    key={q}
-                    onClick={() => setSelectedAiQuestion(q)}
-                    className={`p-3 rounded-xl border text-left text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
-                      selectedAiQuestion === q
-                        ? 'bg-indigo-50 border-indigo-300 text-indigo-900 shadow-xs'
-                        : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50'
-                    }`}
-                  >
-                    <span>{q}</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-indigo-600" />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {selectedAiQuestion && (
-              <div className="p-4 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-2">
-                <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-indigo-800">
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>AI Grounded Answer</span>
-                </div>
-                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
-                  {aiQuestionsMap[selectedAiQuestion]}
-                </p>
-              </div>
             )}
           </div>
-        )}
 
-        {/* Bottom Actions */}
-        <div className="mt-8 pt-4 border-t border-[#E6EAF2] flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => onTrackApplication(opportunity.id, opportunity.title, opportunity.organization)}
-              disabled={isAlreadyTracked}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-colors ${
-                isAlreadyTracked
-                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                  : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 cursor-pointer shadow-2xs'
-              }`}
-            >
-              <BookmarkCheck className="w-3.5 h-3.5 text-purple-600" />
-              <span>{isAlreadyTracked ? 'Tracked in Pipeline' : 'Track Application'}</span>
-            </button>
+          <h2 className="text-2xl sm:text-3xl font-black text-[#172033] tracking-tight leading-tight">
+            {opportunity.title}
+          </h2>
 
-            <button
-              onClick={() => {
-                onClose();
-                onOpenRoadmap(matchResult);
-              }}
-              className="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold transition-colors cursor-pointer"
-            >
-              <span>View 14-Day Roadmap</span>
-            </button>
+          <div className="flex flex-wrap items-center text-xs text-slate-600 gap-y-2 gap-x-4 font-semibold">
+            <span className="flex items-center space-x-1.5 text-slate-800 font-bold">
+              <Building2 className="w-4 h-4 text-indigo-600" />
+              <span>{opportunity.organization}</span>
+            </span>
+
+            <span className="flex items-center space-x-1.5 text-slate-600">
+              <MapPin className="w-4 h-4 text-slate-400" />
+              <span>{opportunity.location}</span>
+            </span>
+
+            <span className="flex items-center space-x-1.5 text-slate-600 font-mono">
+              <Calendar className="w-4 h-4 text-slate-400" />
+              <span>Deadline: {opportunity.deadline}</span>
+            </span>
           </div>
+        </div>
 
-          <a
-            href={opportunity.applicationUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`px-5 py-2 rounded-xl font-bold text-xs flex items-center space-x-1.5 shadow-xs transition-all ${
-              isHighRisk
-                ? 'bg-red-600 hover:bg-red-700 text-white'
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/20'
+        {/* Tab Navigation */}
+        <div className="flex border-b border-slate-100 py-3 gap-2 overflow-x-auto no-scrollbar">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'overview'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
             }`}
           >
-            <span>{isHighRisk ? 'Caution: Open External Link' : 'Apply on Official Portal'}</span>
-            <ExternalLink className="w-3.5 h-3.5" />
+            Overview & Eligibility
+          </button>
+
+          <button
+            onClick={() => setActiveTab('match')}
+            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1 cursor-pointer ${
+              activeTab === 'match'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>AI Match Analysis</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('organization')}
+            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'organization'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            Organization & Trust Source
+          </button>
+        </div>
+
+        {/* Tab Content Body */}
+        <div className="py-5 space-y-6 flex-1 overflow-y-auto">
+          {/* TAB 1: Overview & Eligibility */}
+          {activeTab === 'overview' && (
+            <div className="space-y-6 text-xs sm:text-sm">
+              {/* Overview */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  Overview
+                </h4>
+                <p className="text-slate-700 leading-relaxed font-normal">
+                  {opportunity.overview || opportunity.description}
+                </p>
+              </div>
+
+              {/* Timeline & Benefits Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+                  <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-800">
+                    <Clock className="w-4 h-4 text-indigo-600" />
+                    <span>Timeline & Duration</span>
+                  </div>
+                  <div className="text-xs text-slate-600">
+                    <div>Application Deadline: <strong className="text-slate-800">{opportunity.deadline}</strong></div>
+                    {opportunity.timeline?.duration && (
+                      <div>Program Duration: <strong className="text-slate-800">{opportunity.timeline.duration}</strong></div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+                  <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-800">
+                    <Award className="w-4 h-4 text-emerald-600" />
+                    <span>Compensation / Benefits</span>
+                  </div>
+                  <div className="text-xs text-slate-600">
+                    <div className="font-semibold text-emerald-700">
+                      {opportunity.stipendOrSalary || opportunity.prizes || opportunity.benefits || 'Documented educational credential & mentorship'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Eligibility */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  Eligibility Criteria
+                </h4>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                  {opportunity.minGpaOrCriteria && (
+                    <div className="text-xs text-slate-700">
+                      <strong className="text-slate-900">Academic Standing:</strong> {opportunity.minGpaOrCriteria}
+                    </div>
+                  )}
+                  <div className="text-xs text-slate-700">
+                    <strong className="text-slate-900">Eligible Branches:</strong> {opportunity.eligibleBranches.join(', ')}
+                  </div>
+                  <div className="text-xs text-slate-700">
+                    <strong className="text-slate-900">Eligible Graduation Batches:</strong> {opportunity.eligibleGradYears.join(', ')}
+                  </div>
+                </div>
+              </div>
+
+              {/* Skills */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                    Required Skills
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {opportunity.requiredSkills.map((s) => (
+                      <span key={s} className="px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-800 font-mono text-xs font-bold">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                    Preferred Skills
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {opportunity.preferredSkills.map((s) => (
+                      <span key={s} className="px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 font-mono text-xs font-medium">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: AI Match Analysis */}
+          {activeTab === 'match' && (
+            <div className="space-y-6">
+              {hasProfile && matchResult ? (
+                <div className="space-y-5">
+                  {/* Top Match Score Box */}
+                  <div className="p-5 rounded-3xl bg-indigo-50/70 border border-indigo-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 block">
+                        Calculated Match Fit
+                      </span>
+                      <h3 className="text-2xl font-black text-[#172033]">
+                        Your Match: {score}%
+                      </h3>
+                      <p className="text-xs text-slate-600 mt-0.5">
+                        Evaluated strictly against your declared skills, verified projects, and coursework.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <div className={`px-3 py-1.5 rounded-xl border text-xs font-bold ${prepGapColor}`}>
+                        Estimated Gap: {prepGapTier}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 5-Layer Breakdown */}
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                      5-Layer Fit Breakdown
+                    </h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Skills</span>
+                        <span className="font-mono font-extrabold text-sm text-slate-800">{matchResult.breakdown.skillsScore}%</span>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Projects</span>
+                        <span className="font-mono font-extrabold text-sm text-slate-800">{matchResult.breakdown.projectsScore}%</span>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Education</span>
+                        <span className="font-mono font-extrabold text-sm text-slate-800">{matchResult.breakdown.educationScore}%</span>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Goal Fit</span>
+                        <span className="font-mono font-extrabold text-sm text-slate-800">{matchResult.breakdown.careerInterestScore}%</span>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Eligibility</span>
+                        <span className="font-mono font-extrabold text-sm text-slate-800">{matchResult.breakdown.eligibilityScore}%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* You already have vs Missing */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 space-y-2">
+                      <div className="flex items-center space-x-1.5 text-xs font-bold text-emerald-800">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        <span>You Already Have ({matchResult.matchedSkills.length})</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {matchResult.matchedSkills.map((s) => (
+                          <span key={s} className="px-2.5 py-0.5 rounded-lg bg-white border border-emerald-200 text-emerald-800 text-xs font-mono font-semibold">
+                            ✓ {s}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-2">
+                      <div className="flex items-center space-x-1.5 text-xs font-bold text-amber-800">
+                        <AlertTriangle className="w-4 h-4 text-amber-600" />
+                        <span>You're Missing ({matchResult.missingSkills.length})</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {matchResult.missingSkills.length > 0 ? (
+                          matchResult.missingSkills.map((s) => (
+                            <span key={s} className="px-2.5 py-0.5 rounded-lg bg-white border border-amber-200 text-amber-800 text-xs font-mono font-semibold">
+                              + {s}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-emerald-700 font-semibold">Zero critical skills missing!</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Why it isn't 100% */}
+                  {matchResult.whyNot100Explanation && (
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                        Why isn't this match 100%?
+                      </span>
+                      <p className="text-xs text-slate-700 leading-relaxed">
+                        {matchResult.whyNot100Explanation}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* AI Explanation */}
+                  <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-200 space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 block">
+                      AI Qualitative Explanation
+                    </span>
+                    <p className="text-xs text-indigo-900 leading-relaxed">
+                      {matchResult.aiExplanation}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-8 rounded-3xl bg-slate-50 border border-dashed border-slate-200 text-center space-y-4">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
+                    <Lock className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-black text-[#172033]">
+                      Personalized Match Analysis Locked
+                    </h4>
+                    <p className="text-xs text-slate-600 max-w-md mx-auto mt-1">
+                      Create your profile to unlock personalized 5-layer match analysis, identify exact skill gaps, and view preparation roadmaps.
+                    </p>
+                  </div>
+                  {onBuildProfile && (
+                    <button
+                      onClick={onBuildProfile}
+                      className="px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
+                    >
+                      Build My Profile
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: Organization & Trust Source */}
+          {activeTab === 'organization' && (
+            <div className="space-y-6">
+              <div className="p-5 rounded-3xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center space-x-2 text-slate-800 font-bold text-base">
+                  <Building2 className="w-5 h-5 text-indigo-600" />
+                  <span>{opportunity.organization}</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600">
+                  <div>
+                    Source Attribution: <strong className="text-slate-800">{opportunity.source}</strong>
+                  </div>
+                  <div>
+                    Last Audited: <strong className="text-slate-800">{opportunity.lastChecked}</strong>
+                  </div>
+                  <div>
+                    Trust Index: <strong className="text-emerald-700">{opportunity.verification?.trustScore} / 100</strong>
+                  </div>
+                  <div>
+                    Verification Status: <strong className="text-slate-800">{opportunity.verification?.status}</strong>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-600 pt-2 border-t border-slate-200">
+                  {opportunity.verification?.notes}
+                </p>
+              </div>
+
+              {opportunity.sourceUrl && (
+                <div className="text-xs text-slate-500">
+                  Verified official source URL: <a href={opportunity.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-600 font-bold hover:underline inline-flex items-center gap-1">{opportunity.sourceUrl} <ExternalLink className="w-3 h-3" /></a>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Modal Bottom Actions */}
+        <div className="pt-5 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center space-x-2">
+            {onTrackApplication && (
+              <button
+                onClick={() => onTrackApplication(opportunity.id, opportunity.title, opportunity.organization)}
+                disabled={isAlreadyTracked}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 hover:border-slate-300 disabled:opacity-60 text-slate-700 font-bold text-xs flex items-center space-x-1.5 transition-all cursor-pointer"
+              >
+                <BookmarkCheck className="w-4 h-4 text-indigo-600" />
+                <span>{isAlreadyTracked ? 'Tracked in Pipeline' : 'Track Application'}</span>
+              </button>
+            )}
+
+            {hasProfile && matchResult && onOpenRoadmap && (
+              <button
+                onClick={() => onOpenRoadmap(matchResult)}
+                className="px-4 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center space-x-1.5 transition-all cursor-pointer"
+              >
+                <span>Preparation Roadmap</span>
+              </button>
+            )}
+          </div>
+
+          {/* Official Application Button */}
+          <a
+            href={opportunity.officialUrl || opportunity.applicationUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center space-x-2 shadow-md shadow-indigo-600/25 hover:shadow-indigo-600/35 transition-all cursor-pointer"
+          >
+            <span>Apply on Official Website</span>
+            <ExternalLink className="w-4 h-4" />
           </a>
         </div>
       </div>

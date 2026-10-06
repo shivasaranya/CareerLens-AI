@@ -50,6 +50,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       eligibleBranches: ['Computer Science', 'Information Technology', 'All'],
       eligibleGradYears: [2026, 2027],
       applicationUrl: newUrl.trim(),
+      officialUrl: newUrl.trim(),
+      source: `${newOrg.trim()} Official Portal`,
+      sourceUrl: newUrl.trim(),
+      lastChecked: '2026-10-06',
       verification: {
         status: 'Verified',
         trustScore: 92,

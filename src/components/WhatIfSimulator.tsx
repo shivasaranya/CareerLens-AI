@@ -59,17 +59,22 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
         <div className="absolute top-0 right-0 w-80 h-80 bg-amber-50/60 rounded-full blur-3xl pointer-events-none" />
 
         <div className="max-w-3xl space-y-3 relative z-10">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            <span>Interactive Opportunity Simulator</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <span>Interactive Opportunity Simulator</span>
+            </div>
+            <div className="inline-flex items-center space-x-1 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-xs font-extrabold uppercase tracking-wider font-mono">
+              <span>AI ESTIMATE — NOT A GUARANTEE</span>
+            </div>
           </div>
 
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-[#172033] tracking-tight">
-            WHAT IF?
+          <h2 className="text-3xl sm:text-5xl font-black text-[#172033] tracking-tight">
+            What if you learned one more skill?
           </h2>
 
           <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-            Test how acquiring a skill, certification, or pivoting goals expands your qualified opportunity horizon before investing weeks of study.
+            Test how acquiring AWS, Docker, PyTorch, or Kubernetes expands your qualified opportunity horizon and unlocks additional high-value roles before investing weeks of study.
           </p>
         </div>
 

@@ -394,11 +394,13 @@ export const OpportunityRadar: React.FC<OpportunityRadarProps> = ({
             {filteredMatches.map((m) => (
               <OpportunityCard
                 key={m.opportunity.id}
+                opportunity={m.opportunity}
                 matchResult={m}
+                hasProfile={true}
                 onWhyMatch={onWhyMatch}
                 onWhyNot100={onWhyNot100}
                 onViewRoadmap={onViewRoadmap}
-                onViewDetails={onViewDetails}
+                onViewDetails={() => onViewDetails(m)}
               />
             ))}
           </div>

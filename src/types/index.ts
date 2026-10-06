@@ -142,6 +142,7 @@ export interface Opportunity {
   deadline: string; // ISO date
   daysRemaining: number;
   description: string;
+  overview?: string;
   requiredSkills: string[];
   preferredSkills: string[];
   eligibleBranches: string[];
@@ -149,6 +150,18 @@ export interface Opportunity {
   minGpaOrCriteria?: string;
   verification: OpportunityVerification;
   applicationUrl: string;
+  officialUrl?: string;
+  source: string;
+  sourceUrl: string;
+  lastChecked: string;
+  timeline?: {
+    applicationDeadline: string;
+    startDate?: string;
+    duration?: string;
+  };
+  benefits?: string;
+  prizes?: string;
+  teamSize?: string;
   featured?: boolean;
 }
 

@@ -18,6 +18,7 @@ import {
   LogOut,
   UserPlus
 } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 import { StudentProfile, AuthUser } from '@/types';
 
 interface NavbarProps {
@@ -28,9 +29,9 @@ interface NavbarProps {
   onOpenOnboarding: () => void;
   onOpenAuth: (mode?: 'signin' | 'signup') => void;
   onSignOut: () => void;
-  onToggleCopilot: () => void;
-  isCopilotOpen: boolean;
-  onResetDemo: () => void;
+  onToggleCopilot?: () => void;
+  isCopilotOpen?: boolean;
+  onResetDemo?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -42,113 +43,92 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAuth,
   onSignOut,
   onToggleCopilot,
-  isCopilotOpen,
+  isCopilotOpen = false,
   onResetDemo,
 }) => {
   const hasProfile = Boolean(student && student.name && student.name.trim().length > 0);
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-[#E6EAF2] bg-white/95 backdrop-blur-md shadow-xs">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-md shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Brand Logo */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('landing')}>
-            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-500 p-0.5 shadow-sm shadow-indigo-500/20">
-              <div className="w-full h-full bg-white rounded-[10px] flex items-center justify-center">
-                <Compass className="w-5 h-5 text-indigo-600 animate-pulse-subtle" />
-              </div>
-            </div>
-            <div>
-              <div className="flex items-center space-x-1.5">
-                <span className="font-extrabold text-lg tracking-tight text-[#172033]">CareerLens</span>
-                <span className="px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
-                  AI
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 hidden sm:block font-medium">AI Opportunity Intelligence</p>
+        <div className="flex items-center justify-between h-18">
+          {/* TOP LEFT: CareerLens AI Custom Logo */}
+          <div className="flex items-center">
+            <div onClick={() => setActiveTab('landing')}>
+              <BrandLogo size="md" showTagline={false} />
             </div>
           </div>
 
-          {/* Navigation Items */}
+          {/* CENTER/RIGHT Navigation Links */}
           <nav className="hidden lg:flex items-center space-x-1">
             <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center space-x-1.5 ${
-                activeTab === 'dashboard'
-                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-200/90 font-semibold shadow-xs'
-                  : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50'
+              onClick={() => setActiveTab('landing')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'landing'
+                  ? 'text-indigo-700 bg-indigo-50/80'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
-              <Target className={`w-4 h-4 ${activeTab === 'dashboard' ? 'text-indigo-600' : 'text-slate-500'}`} />
+              Home
+            </button>
+
+            <button
+              onClick={() => {
+                if (activeTab !== 'landing') setActiveTab('landing');
+                setTimeout(() => {
+                  const el = document.getElementById('how-it-works');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all cursor-pointer"
+            >
+              How It Works
+            </button>
+
+            <button
+              onClick={() => setActiveTab('opportunities')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+                activeTab === 'opportunities' || activeTab === 'dashboard'
+                  ? 'text-indigo-700 bg-indigo-50/80'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <Target className="w-3.5 h-3.5 text-indigo-600" />
               <span>Opportunities</span>
             </button>
 
             <button
-              onClick={() => setActiveTab('graph')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center space-x-1.5 ${
-                activeTab === 'graph'
-                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-200/90 font-semibold shadow-xs'
-                  : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50'
-              }`}
-            >
-              <GitBranch className={`w-4 h-4 ${activeTab === 'graph' ? 'text-indigo-600' : 'text-slate-500'}`} />
-              <span>Opportunity Map</span>
-            </button>
-
-            <button
               onClick={() => setActiveTab('what-if')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center space-x-1.5 ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
                 activeTab === 'what-if'
-                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-200/90 font-semibold shadow-xs'
-                  : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50'
+                  ? 'text-indigo-700 bg-indigo-50/80'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
-              <Sparkles className={`w-4 h-4 ${activeTab === 'what-if' ? 'text-indigo-600' : 'text-amber-500'}`} />
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
               <span>What-If</span>
             </button>
 
-            <button
-              onClick={() => setActiveTab('skill-gap')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center space-x-1.5 ${
-                activeTab === 'skill-gap'
-                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-200/90 font-semibold shadow-xs'
-                  : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50'
-              }`}
-            >
-              <Layers className={`w-4 h-4 ${activeTab === 'skill-gap' ? 'text-indigo-600' : 'text-slate-500'}`} />
-              <span>Skill Gaps</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('roadmap')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center space-x-1.5 ${
-                activeTab === 'roadmap'
-                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-200/90 font-semibold shadow-xs'
-                  : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50'
-              }`}
-            >
-              <MapPin className={`w-4 h-4 ${activeTab === 'roadmap' ? 'text-indigo-600' : 'text-slate-500'}`} />
-              <span>Roadmap</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('tracker')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center space-x-1.5 ${
-                activeTab === 'tracker'
-                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-200/90 font-semibold shadow-xs'
-                  : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-50'
-              }`}
-            >
-              <BookmarkCheck className={`w-4 h-4 ${activeTab === 'tracker' ? 'text-indigo-600' : 'text-slate-500'}`} />
-              <span>Applications</span>
-            </button>
+            {hasProfile && (
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
+                  activeTab === 'dashboard'
+                    ? 'text-indigo-700 bg-indigo-50/80'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                <GitBranch className="w-3.5 h-3.5 text-indigo-600" />
+                <span>My Dashboard</span>
+              </button>
+            )}
 
             <button
               onClick={() => setActiveTab('admin')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center space-x-1 ${
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
                 activeTab === 'admin'
-                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold'
-                  : 'text-slate-500 hover:text-emerald-700 hover:bg-emerald-50/50'
+                  ? 'text-emerald-700 bg-emerald-50'
+                  : 'text-slate-600 hover:text-emerald-700 hover:bg-slate-50'
               }`}
             >
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
@@ -159,21 +139,21 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Right Action Controls */}
           <div className="flex items-center space-x-2 sm:space-x-3">
             {hasProfile ? (
-              <div className="flex items-center space-x-1.5">
+              <div className="flex items-center space-x-2">
                 <button
                   onClick={onOpenOnboarding}
-                  className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/90 hover:border-indigo-300 hover:bg-indigo-50/40 transition-all text-left text-xs shadow-2xs cursor-pointer"
-                  title="Click to review or edit profile"
+                  className="flex items-center space-x-2 px-3.5 py-2 rounded-2xl bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/40 transition-all text-left text-xs shadow-2xs cursor-pointer group"
+                  title="Click to review or edit your profile"
                 >
-                  <div className="w-7 h-7 rounded-full bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-700 font-bold text-xs flex-shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-600 text-white font-bold text-xs flex items-center justify-center flex-shrink-0 shadow-2xs">
                     {student!.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="leading-tight hidden sm:block">
-                    <span className="font-semibold text-slate-800 block truncate max-w-[105px]">
+                    <span className="font-bold text-slate-800 block truncate max-w-[110px] group-hover:text-indigo-600">
                       {student!.name}
                     </span>
                     <span className="text-[10px] text-emerald-600 flex items-center gap-1 font-semibold">
-                      <CheckCircle2 className="w-2.5 h-2.5" /> My Profile
+                      <CheckCircle2 className="w-2.5 h-2.5" /> Verified Profile
                     </span>
                   </div>
                 </button>
@@ -181,7 +161,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   onClick={onSignOut}
                   title="Sign out / Switch account"
-                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                  className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -190,10 +170,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="flex items-center space-x-2">
                 <button
                   onClick={onOpenOnboarding}
-                  className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all flex items-center space-x-1.5 cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all flex items-center space-x-1.5 cursor-pointer"
                 >
-                  <UserPlus className="w-3.5 h-3.5" />
-                  <span>Build My Profile</span>
+                  <UserPlus className="w-4 h-4" />
+                  <span>Create My Profile</span>
                 </button>
                 <button
                   onClick={onSignOut}
@@ -207,50 +187,46 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => onOpenAuth('signin')}
-                  className="px-3 py-1.5 rounded-xl text-slate-700 hover:text-indigo-600 font-bold text-xs transition-colors flex items-center space-x-1 cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-slate-700 hover:text-indigo-600 font-bold text-xs transition-colors flex items-center space-x-1.5 cursor-pointer"
                 >
                   <LogIn className="w-3.5 h-3.5" />
                   <span>Sign In</span>
                 </button>
                 <button
                   onClick={onOpenOnboarding}
-                  className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all flex items-center space-x-1.5 cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 hover:shadow-indigo-600/30 transition-all flex items-center space-x-1.5 cursor-pointer"
                 >
-                  <UserPlus className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Create My Profile</span>
-                  <span className="sm:hidden">Create</span>
+                  <UserPlus className="w-4 h-4" />
+                  <span>Create My Profile</span>
                 </button>
               </div>
             )}
 
             {/* AI Copilot Trigger */}
-            <button
-              onClick={onToggleCopilot}
-              className={`relative px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all shadow-xs cursor-pointer ${
-                isCopilotOpen
-                  ? 'bg-indigo-700 text-white shadow-indigo-500/25'
-                  : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20'
-              }`}
-            >
-              <Bot className="w-4 h-4 text-indigo-100" />
-              <span className="hidden sm:inline">Copilot</span>
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-300 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-200"></span>
-              </span>
-            </button>
+            {onToggleCopilot && (
+              <button
+                onClick={onToggleCopilot}
+                className={`relative px-3 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all shadow-xs cursor-pointer ${
+                  isCopilotOpen
+                    ? 'bg-indigo-700 text-white shadow-indigo-500/25'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+                title="AI Opportunity Copilot"
+              >
+                <Bot className="w-4 h-4 text-indigo-600" />
+                <span className="hidden md:inline font-bold">Copilot</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Mobile Navigation Row */}
-        <div className="lg:hidden flex items-center space-x-1 overflow-x-auto py-2 border-t border-slate-100 no-scrollbar">
+        {/* Mobile Navigation Strip */}
+        <div className="lg:hidden flex items-center space-x-1 overflow-x-auto py-2.5 border-t border-slate-100 no-scrollbar">
           {[
-            { id: 'dashboard', label: 'Opportunities', icon: Target },
-            { id: 'graph', label: 'Map', icon: GitBranch },
+            { id: 'landing', label: 'Home', icon: Compass },
+            { id: 'opportunities', label: 'Opportunities', icon: Target },
             { id: 'what-if', label: 'What-If', icon: Sparkles },
-            { id: 'skill-gap', label: 'Gaps', icon: Layers },
-            { id: 'roadmap', label: 'Roadmap', icon: MapPin },
-            { id: 'tracker', label: 'Tracker', icon: BookmarkCheck },
+            ...(hasProfile ? [{ id: 'dashboard', label: 'Dashboard', icon: GitBranch }] : []),
             { id: 'admin', label: 'Trust', icon: ShieldCheck },
           ].map((item) => {
             const Icon = item.icon;
@@ -258,9 +234,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`flex-shrink-0 px-2.5 py-1 rounded-md text-xs font-medium flex items-center space-x-1 ${
+                className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 ${
                   activeTab === item.id
-                    ? 'bg-indigo-50 text-indigo-700 border border-indigo-200 font-semibold'
+                    ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
