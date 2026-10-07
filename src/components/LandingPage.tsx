@@ -146,7 +146,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <span>How It Works</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-black text-[#172033] tracking-tight">
-            The Closed-Loop Intelligence Framework
+            From profile to possibility.
           </h2>
           <p className="text-sm sm:text-base text-slate-600 mt-3">
             From raw coursework and repos to verified fits, clear skill gap analysis, and tailored preparation roadmaps.
@@ -277,12 +277,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         <div className="text-center max-w-2xl mx-auto mb-14">
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold uppercase tracking-wider mb-3">
             <Compass className="w-3.5 h-3.5" />
-            <span>Opportunity Landscape</span>
+            <span>Opportunity Universe</span>
           </div>
           <h2 className="text-3xl sm:text-5xl font-black text-[#172033] tracking-tight">
-            More than jobs. <br />
+            One profile. <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
-              Your entire opportunity universe.
+              A universe of opportunities.
             </span>
           </h2>
           <p className="text-sm sm:text-base text-slate-600 mt-3">
@@ -484,6 +484,50 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   <p className="text-[11px] text-indigo-200/80 mt-0.5">
                     Apply directly on official company ATS portals without intermediary fee redirects.
                   </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Visual Explainability Callout (Section 13) */}
+            <div className="pt-6 border-t border-white/10 mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              <div className="space-y-2">
+                <h3 className="text-xl font-black text-white">Recommendations you can understand.</h3>
+                <p className="text-xs text-indigo-200 leading-relaxed">
+                  CareerLens AI does not simply give an opaque number. It explains why each opportunity matches, which skills match, which requirements are missing, whether you are eligible, and what you can improve to become competitive.
+                </p>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                  <span className="text-xs font-bold text-white uppercase tracking-wider">Why this match?</span>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 font-mono text-[10px] font-bold">84% AI Match</span>
+                </div>
+                
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex items-center space-x-2 text-emerald-300 font-semibold">
+                    <span>✓</span>
+                    <span>Python</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-emerald-300 font-semibold">
+                    <span>✓</span>
+                    <span>Problem Solving</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-emerald-300 font-semibold">
+                    <span>✓</span>
+                    <span>CS/IT Background</span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-white/10 space-y-1.5 text-xs">
+                  <span className="text-[10px] uppercase font-bold text-indigo-300 block">Missing:</span>
+                  <div className="flex items-center space-x-2 text-slate-300">
+                    <span className="text-slate-400">○</span>
+                    <span>SQL</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-slate-300">
+                    <span className="text-slate-400">○</span>
+                    <span>Cloud Fundamentals</span>
+                  </div>
                 </div>
               </div>
             </div>

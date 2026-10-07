@@ -416,7 +416,10 @@ export default function JobsPage() {
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div>
                       <span className="text-xs font-bold text-slate-500 block">{job.organization}</span>
-                      <h3 className="text-base font-black text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2 mt-0.5">
+                      <h3 
+                        onClick={() => router.push(`/jobs/${job.id}`)}
+                        className="text-base font-black text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2 mt-0.5 cursor-pointer"
+                      >
                         {job.title}
                       </h3>
                     </div>
@@ -435,7 +438,7 @@ export default function JobsPage() {
                     <span className="px-2.5 py-1 rounded-lg bg-slate-100 font-semibold">
                       {job.location}
                     </span>
-                    <span className={`px-2.5 py-1 rounded-lg font-semibold ${
+                    <span className={`px-2.5 py-1 rounded-lg font-bold ${
                       job.workMode === 'Remote' ? 'bg-emerald-50 text-emerald-700' :
                       job.workMode === 'Hybrid' ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-700'
                     }`}>
@@ -514,13 +517,21 @@ export default function JobsPage() {
                         </div>
                       )}
 
-                      <button
-                        onClick={() => setSelectedOppForDetail({ opp: job, match })}
-                        className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition-all flex items-center justify-center space-x-1 cursor-pointer"
-                      >
-                        <span>View Role Details</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => setSelectedOppForDetail({ opp: job, match })}
+                          className="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-all flex items-center justify-center space-x-1 cursor-pointer"
+                        >
+                          <span>Quick View</span>
+                        </button>
+                        <button
+                          onClick={() => router.push(`/jobs/${job.id}`)}
+                          className="py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition-all flex items-center justify-center space-x-1 cursor-pointer"
+                        >
+                          <span>Full Role</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -528,10 +539,10 @@ export default function JobsPage() {
                         Create your profile to see your match
                       </span>
                       <button
-                        onClick={() => setSelectedOppForDetail({ opp: job, match: null })}
-                        className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-all flex items-center justify-center space-x-1 cursor-pointer"
+                        onClick={() => router.push(`/jobs/${job.id}`)}
+                        className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition-all flex items-center justify-center space-x-1 cursor-pointer"
                       >
-                        <span>Explore Role</span>
+                        <span>View Role Details</span>
                         <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
