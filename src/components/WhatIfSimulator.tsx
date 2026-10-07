@@ -34,6 +34,13 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
   );
   const [isSimulating, setIsSimulating] = useState(false);
 
+  React.useEffect(() => {
+    if (initialSkill) {
+      setInputQuery(initialSkill);
+      setSimulationResult(simulateWhatIf(initialSkill, student, opportunities));
+    }
+  }, [initialSkill, student, opportunities]);
+
   const samplePresets = [
     'Docker & Containerization',
     'AWS Cloud Architecture',
@@ -49,7 +56,7 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
       const res = simulateWhatIf(target, student, opportunities);
       setSimulationResult(res);
       setIsSimulating(false);
-    }, 350);
+    }, 250);
   };
 
   return (
@@ -135,8 +142,8 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({
               Relevant opportunities accessible with your current profile
             </p>
           </div>
-          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 font-medium">
-            Based on verified Python, SQL, REST APIs
+          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 font-medium truncate" title={student.skills.map((s) => s.name).join(', ')}>
+            Based on {student.skills.length} verified skills ({student.skills.slice(0, 3).map((s) => s.name).join(', ')}{student.skills.length > 3 ? '...' : ''})
           </div>
         </div>
 

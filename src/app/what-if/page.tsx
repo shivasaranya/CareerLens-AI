@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { WhatIfSimulator } from '@/components/WhatIfSimulator';
 import { EmptyDashboard } from '@/components/EmptyDashboard';
@@ -15,11 +15,14 @@ import {
   saveUserProfile,
   signOut 
 } from '@/lib/storage';
-import { Sparkles, ArrowRight, Compass } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Sparkles } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function WhatIfPage() {
+function WhatIfContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const skillParam = searchParams.get('addSkill') || searchParams.get('skill') || 'Docker & Containerization';
+
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [student, setStudent] = useState<StudentProfile | null>(null);
   const [currentUser, setCurrentUserState] = useState<AuthUser | null>(null);
@@ -73,7 +76,11 @@ export default function WhatIfPage() {
   };
 
   if (!isClient) {
-    return <div className="min-h-screen bg-[#F7F9FC] flex items-center justify-center text-slate-500 font-mono text-xs">Loading What-If Simulator...</div>;
+    return (
+      <div className="min-h-screen bg-[#F7F9FC] flex items-center justify-center text-slate-500 font-mono text-xs">
+        Loading What-If Simulator...
+      </div>
+    );
   }
 
   return (
@@ -91,10 +98,13 @@ export default function WhatIfPage() {
         activeTab="what-if"
         setActiveTab={(tab) => {
           if (tab === 'landing') router.push('/');
+          else if (tab === 'dashboard') router.push('/dashboard');
+          else if (tab === 'career-map') router.push('/career-map');
+          else if (tab === 'skill-map') router.push('/skill-map');
+          else if (tab === 'skill-gaps') router.push('/skill-gaps');
           else if (tab === 'opportunities') router.push('/opportunities');
           else if (tab === 'jobs') router.push('/jobs');
-          else if (tab === 'skill-map') router.push('/skill-map');
-          else if (tab === 'dashboard') router.push('/dashboard');
+          else if (tab === 'what-if') router.push('/what-if');
         }}
         student={student}
         currentUser={currentUser}
@@ -108,7 +118,7 @@ export default function WhatIfPage() {
           <WhatIfSimulator
             student={student!}
             opportunities={opportunities}
-            initialSkill="AWS Cloud Architecture"
+            initialSkill={skillParam}
             onSelectOpportunityForRoadmap={(oppId) => {
               router.push('/opportunities');
             }}
@@ -145,5 +155,13 @@ export default function WhatIfPage() {
         }}
       />
     </div>
+  );
+}
+
+export default function WhatIfPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#F7F9FC] flex items-center justify-center text-slate-500 font-mono text-xs">Loading Simulator...</div>}>
+      <WhatIfContent />
+    </Suspense>
   );
 }
